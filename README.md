@@ -4,10 +4,50 @@ A premium-grade Flutter mobile application for booking sports venue slots, style
 
 ---
 
-## 🚀 Downloads & Live API
+## 🚀 Download & Live API
 * 🤖 [Download Android APK](https://github.com/Akash-ptl/quickslot_app/releases)
-* 🍎 [Download iOS Simulator Build](https://github.com/Akash-ptl/quickslot_app/releases)
 * 🌐 [Production API Swagger Docs](https://quickslot-backend-jdhl.onrender.com/docs)
+
+---
+
+## 📐 Architecture Note & Folder Layout
+The app is built using a layer-first structure inside the `lib/` directory:
+* `data/`: REST client ([api_service.dart](lib/data/api_service.dart)) and data schemas ([models.dart](lib/data/models.dart)).
+* `bloc/`: BLoC managers for decoupled state management (`auth`, `venue`, `slot`, `booking`).
+* `screens/`: Layout screens ([initial_screen.dart](lib/screens/initial_screen.dart), [login_screen.dart](lib/screens/login_screen.dart), [register_screen.dart](lib/screens/register_screen.dart), [venue_list_screen.dart](lib/screens/venue_list_screen.dart), [venue_details_screen.dart](lib/screens/venue_details_screen.dart), [my_bookings_screen.dart](lib/screens/my_bookings_screen.dart)).
+* `widgets/`: Premium notification alert helper ([premium_snackbar.dart](lib/widgets/premium_snackbar.dart)) and custom shimmer skeleton overlays ([shimmer_loading.dart](lib/widgets/shimmer_loading.dart)).
+
+---
+
+## 🔄 App User Flow
+
+```text
+  [LoginScreen] ────► [VenueListScreen] ────► [VenueDetailsScreen] ◄────► [MyBookingsScreen]
+  (Auto-Login Check)   (Shimmer Loaders)      (Timeline Picker)           (Stadium Passes Layout)
+```
+
+1. **Auto-Login / Splash Screen**: App starts at `InitialScreen`, checks if session token exists in local storage (`shared_preferences`), and dynamically routes to `VenueListScreen` or `LoginScreen`.
+2. **Venue Listing Feed**: Displays active sports grounds with search capability, categorization chips, shimmer placeholders, and cascading entry animations.
+3. **Availability Grid & Booking**: Displays dates in a scrollable timeline capsule list and slots as a status grid. Tapping a slot opens a booking confirmation modal.
+4. **My Bookings Manager**: Displays active bookings styled as stadium ticket passes. Users can view passes or cancel a booking.
+
+---
+
+## ⚡ Concurrency Conflict UX Flow
+
+Double-booking collisions are handled cleanly using BLoC's state-listener flow:
+
+```text
+  [Slot Grid] ──(Tap Book)──► [SlotBloc] ──(POST /bookings)──► [FastAPI Backend]
+                                                                        │
+  [Grid Refreshed] ◄──(Reset)─── [SlotBloc] ◄──(Conflict State)◄─── [409 Conflict]
+          │
+  [Collision Dialog shown]
+```
+
+1. If another user books the slot milliseconds earlier, the backend database composite unique constraint rejects the second write and yields a `409 Conflict`.
+2. The `SlotBloc` intercepts the conflict, pulls updated slot states, and emits `bookingStatus: 'conflict'`.
+3. The UI listener detects the status, dismisses the progress spinner, triggers a custom warning dialog, and refreshes the slot grid.
 
 ---
 
@@ -24,15 +64,6 @@ A premium-grade Flutter mobile application for booking sports venue slots, style
 
 ---
 
-## 📐 Architecture Note
-The app is built using a layer-first structure inside the `lib/` directory:
-* `data/`: REST client ([api_service.dart](lib/data/api_service.dart)) and data schemas ([models.dart](lib/data/models.dart)).
-* `bloc/`: BLoC managers for decoupled state management (`auth`, `venue`, `slot`, `booking`).
-* `screens/`: Layout screens ([initial_screen.dart](lib/screens/initial_screen.dart), [login_screen.dart](lib/screens/login_screen.dart), [register_screen.dart](lib/screens/register_screen.dart), [venue_list_screen.dart](lib/screens/venue_list_screen.dart), [venue_details_screen.dart](lib/screens/venue_details_screen.dart), [my_bookings_screen.dart](lib/screens/my_bookings_screen.dart)).
-* `widgets/`: Premium notification alert helper ([premium_snackbar.dart](lib/widgets/premium_snackbar.dart)) and custom shimmer skeleton overlays ([shimmer_loading.dart](lib/widgets/shimmer_loading.dart)).
-
----
-
 ## 💡 Hackathon Deliverables & Defense Notes
 
 ### 1. Scope Decisions (What We Cut & Why)
@@ -41,7 +72,7 @@ The app is built using a layer-first structure inside the `lib/` directory:
 
 ### 2. If We Had One More Day...
 * **WebSockets Gateway**: Implement live synchronization to auto-update slot grid cells in real-time when booked on another device.
-* **Offline Caching**: Implement `drift` database storage on the device for ticket passes to support offline inspection of active bookings.
+* **Offline Caching**: Implement local SQLite read caching for ticket passes to support offline inspection of active bookings.
 
 ### 3. AI Usage & Correction Note
 * **Used AI for**: Initial BLoC boilerplates, custom clipper notch curves, and shimmer loading layouts.
