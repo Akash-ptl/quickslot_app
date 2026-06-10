@@ -20,9 +20,14 @@ class ApiException implements Exception {
 }
 
 class ApiService {
-  // Dynamic Base URL selection (local debug vs production live)
+  // SET THIS TO TRUE ONLY IF testing with a local uvicorn backend on an emulator.
+  // When false, the app connects to the live production Render backend, which is
+  // required when testing on a physical device.
+  static const bool _useLocalBackend = false;
+
+  // Dynamic Base URL selection
   static String get baseUrl {
-    if (kDebugMode) {
+    if (_useLocalBackend && kDebugMode) {
       if (defaultTargetPlatform == TargetPlatform.android) {
         return 'http://10.0.2.2:8000';
       }
