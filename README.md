@@ -80,3 +80,25 @@ Ensure the local API server is running on your network, then start the Flutter a
 flutter run
 ```
 *Note: The `ApiService` base URL is configured to connect to your computer's Wi-Fi network host address (e.g. [http://192.168.0.100:8000](http://192.168.0.100:8000)) for seamless debugging on physical mobile devices.*
+
+---
+
+## 💡 Hackathon Deliverables & Defense Notes
+
+### 1. Architectural Overview
+The system splits responsibility between a highly responsive, animated Flutter frontend and a secure, concurrent Python backend:
+* **Frontend**: Utilizes BLoC architecture for state management. Business logic is completely decoupled from UI widgets. Data streams are processed asynchronously, utilizing loaders (shimmers) to maintain smooth framerates.
+* **Backend**: Uses FastAPI for non-blocking HTTP parsing, paired with SQLite. Concurrency safety is guaranteed at the database engine transaction layer utilizing unique composite index constraints.
+
+### 2. Scope Decisions — What We Cut & Why
+* **Full Third-Party OAuth2 (Google/Apple Sign-in)**: Cut in favor of custom JWT credentials validation to ensure the 6-hour code window was spent refining core transaction concurrency locks.
+* **Live WebSocket Polling Feed**: Cut to optimize battery/network utilization, routing the effort into high-end UX tactile feedback, layout animations, and offline-first error states.
+
+### 3. If We Had One More Day...
+* **WebSockets Synchronisation**: Add a lightweight WebSocket gateway to auto-flip slot statuses from "available" to "booked" on other devices in real-time.
+* **Drift Local Read Cache**: Implement local database storage on the device for "My Bookings" to support offline inspection of stadium ticket passes.
+* **Interactive Arena Seating Map**: Build a custom vector court layout enabling users to visually tap their preferred court rather than selecting from a list.
+
+### 4. AI Usage & Corrections Note
+* **Used AI for**: Initial BLoC structure boilerplates, custom stadium ticket notch path calculations (`TicketClipper`), and shimmer gradient calculations.
+* **What it got wrong**: The AI recommended local loopback routing URLs (`127.0.0.1` and `10.0.2.2`) which resulted in socket connection failures when debugging from physical devices. We identified the network bridge constraints, bound uvicorn to `0.0.0.0`, and dynamically routed client requests to the laptop's local Wi-Fi gateway IP (`192.168.0.100`) to enable correct cross-device communication.
