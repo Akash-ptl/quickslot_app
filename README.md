@@ -12,30 +12,36 @@ A premium-grade Flutter mobile application for booking sports venue slots, style
 
 <table border="1" cellpadding="5">
   <tr>
-    <td align="center" width="33%"><b>Login Screen</b></td>
-    <td align="center" width="33%"><b>Sign Up Screen</b></td>
-    <td align="center" width="33%"><b>Venue Dashboard</b></td>
+    <td align="center" width="50%"><b>Login Screen</b></td>
+    <td align="center" width="50%"><b>Sign Up Screen</b></td>
   </tr>
   <tr>
     <td><img src="screenshots/login_screen.png" width="100%" alt="Login Screen"/></td>
     <td><img src="screenshots/signup_screen.png" width="100%" alt="Sign Up Screen"/></td>
+  </tr>
+  <tr>
+    <td align="center"><b>Venue Dashboard</b></td>
+    <td align="center"><b>Venue Details & Slots Grid</b></td>
+  </tr>
+  <tr>
     <td><img src="screenshots/venue_list_screen.png" width="100%" alt="Venue List"/></td>
-  </tr>
-  <tr>
-    <td align="center"><b>Venue Details & Slots</b></td>
-    <td align="center"><b>Confirm Booking Dialog</b></td>
-    <td align="center"><b>Logout Dialog</b></td>
-  </tr>
-  <tr>
     <td><img src="screenshots/venue_details_screen.png" width="100%" alt="Venue Details"/></td>
+  </tr>
+  <tr>
+    <td align="center"><b>Date Picker Dialog</b></td>
+    <td align="center"><b>Confirm Booking Dialog</b></td>
+  </tr>
+  <tr>
+    <td><img src="screenshots/date_picker.png" width="100%" alt="Date Picker"/></td>
     <td><img src="screenshots/booking_dialog.png" width="100%" alt="Confirm Dialog"/></td>
+  </tr>
+  <tr>
+    <td align="center"><b>Logout Dialog</b></td>
+    <td align="center"><b>My Bookings (Tickets Layout)</b></td>
+  </tr>
+  <tr>
     <td><img src="screenshots/logout_dialog.png" width="100%" alt="Logout Dialog"/></td>
-  </tr>
-  <tr>
-    <td align="center" colspan="3"><b>My Bookings (Tickets Layout)</b></td>
-  </tr>
-  <tr>
-    <td align="center" colspan="3"><img src="screenshots/my_bookings_screen.png" width="50%" alt="My Bookings"/></td>
+    <td><img src="screenshots/my_bookings_screen.png" width="100%" alt="My Bookings"/></td>
   </tr>
 </table>
 
