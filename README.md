@@ -17,9 +17,9 @@ A premium-grade Flutter mobile application for booking sports venue slots, style
     <td align="center" width="33%"><b>Venues Feed Dashboard</b></td>
   </tr>
   <tr>
-    <td><img src="screenshots/login_screen.png" width="100%" alt="Login Screen"/></td>
-    <td><img src="screenshots/signup_screen.png" width="100%" alt="Sign Up Screen"/></td>
-    <td><img src="screenshots/venue_list_screen.png" width="100%" alt="Venue List"/></td>
+    <td align="center"><img src="screenshots/login_screen.png" width="100%" alt="Login Screen" style="border-radius: 16px; border: 6px solid #1c1c1e;"/></td>
+    <td align="center"><img src="screenshots/signup_screen.png" width="100%" alt="Sign Up Screen" style="border-radius: 16px; border: 6px solid #1c1c1e;"/></td>
+    <td align="center"><img src="screenshots/venue_list_screen.png" width="100%" alt="Venue List" style="border-radius: 16px; border: 6px solid #1c1c1e;"/></td>
   </tr>
   <tr>
     <td align="center"><b>Venue Booking Details</b></td>
@@ -27,9 +27,9 @@ A premium-grade Flutter mobile application for booking sports venue slots, style
     <td align="center"><b>Confirm Booking Alert</b></td>
   </tr>
   <tr>
-    <td><img src="screenshots/venue_details_screen.png" width="100%" alt="Venue Details"/></td>
-    <td><img src="screenshots/date_picker.png" width="100%" alt="Date Picker"/></td>
-    <td><img src="screenshots/booking_dialog.png" width="100%" alt="Confirm Dialog"/></td>
+    <td align="center"><img src="screenshots/venue_details_screen.png" width="100%" alt="Venue Details" style="border-radius: 16px; border: 6px solid #1c1c1e;"/></td>
+    <td align="center"><img src="screenshots/date_picker.png" width="100%" alt="Date Picker" style="border-radius: 16px; border: 6px solid #1c1c1e;"/></td>
+    <td align="center"><img src="screenshots/booking_dialog.png" width="100%" alt="Confirm Dialog" style="border-radius: 16px; border: 6px solid #1c1c1e;"/></td>
   </tr>
   <tr>
     <td align="center"><b>Stadium Ticket Passes</b></td>
@@ -37,8 +37,8 @@ A premium-grade Flutter mobile application for booking sports venue slots, style
     <td align="center"><b>QuickSlot App</b></td>
   </tr>
   <tr>
-    <td><img src="screenshots/my_bookings_screen.png" width="100%" alt="My Bookings"/></td>
-    <td><img src="screenshots/logout_dialog.png" width="100%" alt="Logout Dialog"/></td>
+    <td align="center"><img src="screenshots/my_bookings_screen.png" width="100%" alt="My Bookings" style="border-radius: 16px; border: 6px solid #1c1c1e;"/></td>
+    <td align="center"><img src="screenshots/logout_dialog.png" width="100%" alt="Logout Dialog" style="border-radius: 16px; border: 6px solid #1c1c1e;"/></td>
     <td align="center" valign="middle">
       <br/><br/>
       <img src="https://img.shields.io/badge/QuickSlot-Sports%20Booking-008080?style=for-the-badge&logo=sports_tennis" alt="QuickSlot Logo"/>
