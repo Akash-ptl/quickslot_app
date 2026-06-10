@@ -37,42 +37,68 @@ class ApiService {
 
   Future<User> login(String email, String password) async {
     final url = Uri.parse('$baseUrl/auth/login');
-    final response = await http.post(
-      url,
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'email': email,
-        'password': password,
-      }),
-    );
+    print('[ApiService] Logging in user: $email');
+    print('[ApiService] POST URL: $url');
+    print('[ApiService] Request payload: {"email": "$email", "password": "${"*" * password.length}"}');
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      _token = data['access_token'] as String;
-      return User.fromJson(data['user']);
-    } else {
-      final errorMsg = _parseErrorMessage(response.body);
-      throw ApiException(response.statusCode, errorMsg);
+    try {
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': email,
+          'password': password,
+        }),
+      );
+
+      print('[ApiService] Login Response Status Code: ${response.statusCode}');
+      print('[ApiService] Login Response Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        _token = data['access_token'] as String;
+        return User.fromJson(data['user']);
+      } else {
+        final errorMsg = _parseErrorMessage(response.body);
+        throw ApiException(response.statusCode, errorMsg);
+      }
+    } catch (e, stack) {
+      print('[ApiService] Login error: $e');
+      print(stack);
+      rethrow;
     }
   }
 
   Future<User> register(String email, String name, String password) async {
     final url = Uri.parse('$baseUrl/auth/register');
-    final response = await http.post(
-      url,
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'email': email,
-        'name': name,
-        'password': password,
-      }),
-    );
+    print('[ApiService] Registering user: $email, Name: $name');
+    print('[ApiService] POST URL: $url');
+    print('[ApiService] Request payload: {"email": "$email", "name": "$name", "password": "${"*" * password.length}"}');
 
-    if (response.statusCode == 201) {
-      return User.fromJson(jsonDecode(response.body));
-    } else {
-      final errorMsg = _parseErrorMessage(response.body);
-      throw ApiException(response.statusCode, errorMsg);
+    try {
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': email,
+          'name': name,
+          'password': password,
+        }),
+      );
+
+      print('[ApiService] Register Response Status Code: ${response.statusCode}');
+      print('[ApiService] Register Response Body: ${response.body}');
+
+      if (response.statusCode == 201) {
+        return User.fromJson(jsonDecode(response.body));
+      } else {
+        final errorMsg = _parseErrorMessage(response.body);
+        throw ApiException(response.statusCode, errorMsg);
+      }
+    } catch (e, stack) {
+      print('[ApiService] Register error: $e');
+      print(stack);
+      rethrow;
     }
   }
 
