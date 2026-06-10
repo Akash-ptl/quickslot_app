@@ -20,19 +20,20 @@ class ApiException implements Exception {
 }
 
 class ApiService {
-  // Automatically adjust base URL for Android Emulator vs iOS Simulator/Desktop/Web
-  static String get baseUrl {
-    if (kIsWeb) {
-      return 'http://localhost:8000';
+  // Production Render API URL
+  static const String baseUrl = 'https://quickslot-backend-jdhl.onrender.com';
+
+  // GET /users
+  Future<List<User>> getUsers() async {
+    final url = Uri.parse('$baseUrl/users');
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final List<dynamic> jsonList = jsonDecode(response.body);
+      return jsonList.map((json) => User.fromJson(json)).toList();
+    } else {
+      throw ApiException(response.statusCode, "Failed to load users");
     }
-    try {
-      if (Platform.isAndroid) {
-        return 'http://10.0.2.2:8000';
-      }
-    } catch (_) {
-      // Fallback for platform check exceptions
-    }
-    return 'http://localhost:8000';
   }
 
   // GET /venues

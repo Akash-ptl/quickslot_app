@@ -1,15 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
+import '../../data/api_service.dart';
 import '../../data/models.dart';
-
-// Preconfigured Users matching our database seed data
-final mockUsers = [
-  User(id: 1, name: "Akash Patel"),
-  User(id: 2, name: "Judge Alpha"),
-  User(id: 3, name: "Judge Beta"),
-  User(id: 4, name: "Test User 4"),
-  User(id: 5, name: "Test User 5"),
-];
 
 // --- EVENTS ---
 abstract class AuthEvent extends Equatable {
@@ -17,6 +9,8 @@ abstract class AuthEvent extends Equatable {
   @override
   List<Object?> get props => [];
 }
+
+class LoadUsersEvent extends AuthEvent {}
 
 class LoginEvent extends AuthEvent {
   final User user;
@@ -34,7 +28,23 @@ abstract class AuthState extends Equatable {
   List<Object?> get props => [];
 }
 
-class UnauthenticatedState extends AuthState {}
+class AuthInitialState extends AuthState {}
+
+class AuthUsersLoadingState extends AuthState {}
+
+class AuthUsersLoadedState extends AuthState {
+  final List<User> users;
+  const AuthUsersLoadedState(this.users);
+  @override
+  List<Object?> get props => [users];
+}
+
+class AuthUsersErrorState extends AuthState {
+  final String message;
+  const AuthUsersErrorState(this.message);
+  @override
+  List<Object?> get props => [message];
+}
 
 class AuthenticatedState extends AuthState {
   final User user;
@@ -45,13 +55,25 @@ class AuthenticatedState extends AuthState {
 
 // --- BLOC ---
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
-  AuthBloc() : super(UnauthenticatedState()) {
+  final ApiService apiService;
+
+  AuthBloc({required this.apiService}) : super(AuthInitialState()) {
+    on<LoadUsersEvent>((event, emit) async {
+      emit(AuthUsersLoadingState());
+      try {
+        final users = await apiService.getUsers();
+        emit(AuthUsersLoadedState(users));
+      } catch (e) {
+        emit(AuthUsersErrorState(e.toString()));
+      }
+    });
+
     on<LoginEvent>((event, emit) {
       emit(AuthenticatedState(event.user));
     });
 
     on<LogoutEvent>((event, emit) {
-      emit(UnauthenticatedState());
+      emit(AuthInitialState()); // Revert back to loadable state
     });
   }
 }

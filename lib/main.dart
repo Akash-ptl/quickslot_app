@@ -18,7 +18,7 @@ void main() {
       child: MultiBlocProvider(
         providers: [
           BlocProvider<AuthBloc>(
-            create: (context) => AuthBloc(),
+            create: (context) => AuthBloc(apiService: apiService),
           ),
           BlocProvider<VenueBloc>(
             create: (context) => VenueBloc(apiService: apiService),

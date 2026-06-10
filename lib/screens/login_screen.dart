@@ -3,8 +3,20 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/auth/auth_bloc.dart';
 import 'venue_list_screen.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Dynamically load users from backend API
+    context.read<AuthBloc>().add(LoadUsersEvent());
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -88,91 +100,152 @@ class LoginScreen extends StatelessWidget {
                           width: 1.0,
                         ),
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "DEMO PROFILES",
-                            style: theme.textTheme.labelMedium?.copyWith(
-                              color: Colors.tealAccent.shade400,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 1.2,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          ListView.separated(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            itemCount: mockUsers.length,
-                            separatorBuilder: (context, index) => const SizedBox(height: 12),
-                            itemBuilder: (context, index) {
-                              final user = mockUsers[index];
-                              return InkWell(
-                                onTap: () {
-                                  context.read<AuthBloc>().add(LoginEvent(user));
-                                },
-                                borderRadius: BorderRadius.circular(16),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 14,
+                      child: BlocBuilder<AuthBloc, AuthState>(
+                        builder: (context, state) {
+                          if (state is AuthUsersLoadingState || state is AuthInitialState) {
+                            return const Center(
+                              child: Padding(
+                                padding: EdgeInsets.all(20.0),
+                                child: CircularProgressIndicator(color: Colors.tealAccent),
+                              ),
+                            );
+                          }
+
+                          if (state is AuthUsersErrorState) {
+                            return Column(
+                              children: [
+                                const Icon(Icons.cloud_off_rounded, color: Colors.redAccent, size: 48),
+                                const SizedBox(height: 12),
+                                const Text(
+                                  "Failed to load profiles.",
+                                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  state.message.contains("SocketException") 
+                                      ? "Check network connection or backend state."
+                                      : state.message,
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(color: Colors.white38, fontSize: 12),
+                                ),
+                                const SizedBox(height: 16),
+                                ElevatedButton.icon(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF142930),
+                                    foregroundColor: Colors.tealAccent,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                                   ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.05),
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(
-                                      color: Colors.white.withOpacity(0.08),
-                                      width: 1.0,
-                                    ),
+                                  onPressed: () {
+                                    context.read<AuthBloc>().add(LoadUsersEvent());
+                                  },
+                                  icon: const Icon(Icons.refresh_rounded),
+                                  label: const Text("Retry"),
+                                ),
+                              ],
+                            );
+                          }
+
+                          if (state is AuthUsersLoadedState) {
+                            final users = state.users;
+                            if (users.isEmpty) {
+                              return const Center(
+                                child: Text(
+                                  "No users found in database.",
+                                  style: TextStyle(color: Colors.white70),
+                                ),
+                              );
+                            }
+
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "LIVE PROFILES",
+                                  style: theme.textTheme.labelMedium?.copyWith(
+                                    color: Colors.tealAccent.shade400,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 1.2,
                                   ),
-                                  child: Row(
-                                    children: [
-                                      CircleAvatar(
-                                        backgroundColor: Colors.tealAccent.shade700.withOpacity(0.2),
-                                        child: Text(
-                                          user.name.substring(0, 1).toUpperCase(),
-                                          style: TextStyle(
-                                            color: Colors.tealAccent.shade400,
-                                            fontWeight: FontWeight.bold,
+                                ),
+                                const SizedBox(height: 16),
+                                ListView.separated(
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  itemCount: users.length,
+                                  separatorBuilder: (context, index) => const SizedBox(height: 12),
+                                  itemBuilder: (context, index) {
+                                    final user = users[index];
+                                    return InkWell(
+                                      onTap: () {
+                                        context.read<AuthBloc>().add(LoginEvent(user));
+                                      },
+                                      borderRadius: BorderRadius.circular(16),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                          vertical: 14,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withOpacity(0.05),
+                                          borderRadius: BorderRadius.circular(16),
+                                          border: Border.all(
+                                            color: Colors.white.withOpacity(0.08),
+                                            width: 1.0,
                                           ),
                                         ),
-                                      ),
-                                      const SizedBox(width: 16),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                        child: Row(
                                           children: [
-                                            Text(
-                                              user.name,
-                                              style: const TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.w600,
+                                            CircleAvatar(
+                                              backgroundColor: Colors.tealAccent.shade700.withOpacity(0.2),
+                                              child: Text(
+                                                user.name.substring(0, 1).toUpperCase(),
+                                                style: TextStyle(
+                                                  color: Colors.tealAccent.shade400,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
                                               ),
                                             ),
-                                            const SizedBox(height: 2),
-                                            Text(
-                                              "ID: ${user.id} • ${user.id == 1 ? 'Developer' : 'Judge'}",
-                                              style: const TextStyle(
-                                                color: Colors.white38,
-                                                fontSize: 12,
+                                            const SizedBox(width: 16),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    user.name,
+                                                    style: const TextStyle(
+                                                      color: Colors.white,
+                                                      fontSize: 16,
+                                                      fontWeight: FontWeight.w600,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 2),
+                                                  Text(
+                                                    "ID: ${user.id} • Registered User",
+                                                    style: const TextStyle(
+                                                      color: Colors.white38,
+                                                      fontSize: 12,
+                                                    ),
+                                                  ),
+                                                ],
                                               ),
+                                            ),
+                                            Icon(
+                                              Icons.arrow_forward_ios_rounded,
+                                              size: 16,
+                                              color: Colors.white.withOpacity(0.3),
                                             ),
                                           ],
                                         ),
                                       ),
-                                      Icon(
-                                        Icons.arrow_forward_ios_rounded,
-                                        size: 16,
-                                        color: Colors.white.withOpacity(0.3),
-                                      ),
-                                    ],
-                                  ),
+                                    );
+                                  },
                                 ),
-                              );
-                            },
-                          ),
-                        ],
+                              ],
+                            );
+                          }
+
+                          return const SizedBox();
+                        },
                       ),
                     ),
                     const SizedBox(height: 30),
