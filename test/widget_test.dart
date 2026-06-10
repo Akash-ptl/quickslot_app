@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quickslot_app/data/models.dart';
 import 'package:quickslot_app/widgets/premium_snackbar.dart';
+import 'package:quickslot_app/widgets/shimmer_loading.dart';
 
 void main() {
   group('QuickSlot Model Unit Tests', () {
@@ -92,6 +93,38 @@ void main() {
       // Verify SnackBar contents
       expect(find.text('Test Success Notification'), findsOneWidget);
       expect(find.byIcon(Icons.check_circle_outline_rounded), findsOneWidget);
+    });
+
+    testWidgets('ShimmerLoading renders child when isLoading is false', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: ShimmerLoading(
+              isLoading: false,
+              child: Text('Loaded Content'),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Loaded Content'), findsOneWidget);
+      expect(find.byType(ShaderMask), findsNothing);
+    });
+
+    testWidgets('ShimmerLoading renders ShaderMask when isLoading is true', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: ShimmerLoading(
+              isLoading: true,
+              child: Text('Loading Content'),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Loading Content'), findsOneWidget);
+      expect(find.byType(ShaderMask), findsOneWidget);
     });
   });
 }
