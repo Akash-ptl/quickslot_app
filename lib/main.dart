@@ -1,12 +1,37 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'data/api_service.dart';
+import 'bloc/auth/auth_bloc.dart';
+import 'bloc/venue/venue_bloc.dart';
+import 'bloc/slot/slot_bloc.dart';
+import 'bloc/booking/booking_bloc.dart';
 import 'screens/login_screen.dart';
 
 void main() {
+  final apiService = ApiService();
+
   runApp(
-    // Wrap entire app in ProviderScope to enable Riverpod state management
-    const ProviderScope(
-      child: MyApp(),
+    MultiRepositoryProvider(
+      providers: [
+        RepositoryProvider<ApiService>.value(value: apiService),
+      ],
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider<AuthBloc>(
+            create: (context) => AuthBloc(),
+          ),
+          BlocProvider<VenueBloc>(
+            create: (context) => VenueBloc(apiService: apiService),
+          ),
+          BlocProvider<SlotBloc>(
+            create: (context) => SlotBloc(apiService: apiService),
+          ),
+          BlocProvider<BookingBloc>(
+            create: (context) => BookingBloc(apiService: apiService),
+          ),
+        ],
+        child: const MyApp(),
+      ),
     ),
   );
 }
