@@ -27,7 +27,7 @@ class ApiService {
 
   // Dynamic Base URL selection
   static String get baseUrl {
-    if (_useLocalBackend && kDebugMode) {
+    if (_useLocalBackend) {
       // Connect to your local computer's Wi-Fi IP address
       return 'http://192.168.0.100:8000';
     }
