@@ -27,13 +27,13 @@ class ApiService {
 
   String? get token => _token;
 
-  Future<void> login(int userId, String password) async {
+  Future<User> login(String email, String password) async {
     final url = Uri.parse('$baseUrl/auth/login');
     final response = await http.post(
       url,
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
-        'user_id': userId,
+        'email': email,
         'password': password,
       }),
     );
@@ -41,6 +41,27 @@ class ApiService {
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       _token = data['access_token'] as String;
+      return User.fromJson(data['user']);
+    } else {
+      final errorMsg = _parseErrorMessage(response.body);
+      throw ApiException(response.statusCode, errorMsg);
+    }
+  }
+
+  Future<User> register(String email, String name, String password) async {
+    final url = Uri.parse('$baseUrl/auth/register');
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'email': email,
+        'name': name,
+        'password': password,
+      }),
+    );
+
+    if (response.statusCode == 201) {
+      return User.fromJson(jsonDecode(response.body));
     } else {
       final errorMsg = _parseErrorMessage(response.body);
       throw ApiException(response.statusCode, errorMsg);
@@ -49,19 +70,6 @@ class ApiService {
 
   void logout() {
     _token = null;
-  }
-
-  // GET /users
-  Future<List<User>> getUsers() async {
-    final url = Uri.parse('$baseUrl/users');
-    final response = await http.get(url);
-
-    if (response.statusCode == 200) {
-      final List<dynamic> jsonList = jsonDecode(response.body);
-      return jsonList.map((json) => User.fromJson(json)).toList();
-    } else {
-      throw ApiException(response.statusCode, "Failed to load users");
-    }
   }
 
   // GET /venues

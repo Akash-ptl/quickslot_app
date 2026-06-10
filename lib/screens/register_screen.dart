@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/auth/auth_bloc.dart';
-import 'register_screen.dart';
 import 'venue_list_screen.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class RegisterScreen extends StatefulWidget {
+  const RegisterScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
@@ -20,6 +20,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void dispose() {
+    _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -33,9 +34,11 @@ class _LoginScreenState extends State<LoginScreen> {
       body: BlocListener<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is AuthenticatedState) {
-            Navigator.pushReplacement(
+            // Success registration redirects to venue list (via auto-login)
+            Navigator.pushAndRemoveUntil(
               context,
               MaterialPageRoute(builder: (context) => const VenueListScreen()),
+              (route) => false,
             );
           } else if (state is AuthErrorState) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -51,7 +54,7 @@ class _LoginScreenState extends State<LoginScreen> {
         },
         child: Stack(
           children: [
-            // Premium background gradient
+            // Background gradient
             Container(
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
@@ -72,7 +75,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // Header logo icon
+                      // Logo Icon
                       Container(
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
@@ -84,28 +87,28 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                         child: Icon(
-                          Icons.sports_tennis_rounded,
+                          Icons.person_add_alt_1_rounded,
                           size: 64,
                           color: Colors.tealAccent.shade400,
                         ),
                       ),
                       const SizedBox(height: 24),
                       Text(
-                        "QuickSlot",
-                        style: theme.textTheme.headlineLarge?.copyWith(
+                        "Join QuickSlot",
+                        style: theme.textTheme.headlineMedium?.copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
-                          letterSpacing: 1.5,
+                          letterSpacing: 1.2,
                         ),
                       ),
                       const SizedBox(height: 8),
                       const Text(
-                        "Sign in to book sports slots",
+                        "Register to reserve sports venues",
                         style: TextStyle(color: Colors.white70, fontSize: 16),
                       ),
                       const SizedBox(height: 40),
 
-                      // Login Form
+                      // Sign Up Form Container
                       Container(
                         padding: const EdgeInsets.all(28),
                         decoration: BoxDecoration(
@@ -121,7 +124,46 @@ class _LoginScreenState extends State<LoginScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              // Email Field
+                              // Full Name field
+                              TextFormField(
+                                controller: _nameController,
+                                style: const TextStyle(color: Colors.white),
+                                decoration: InputDecoration(
+                                  labelText: "Full Name",
+                                  labelStyle: const TextStyle(color: Colors.white70),
+                                  hintText: "Enter your full name",
+                                  hintStyle: const TextStyle(color: Colors.white24),
+                                  prefixIcon: const Icon(Icons.person_outline_rounded, color: Colors.tealAccent),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    borderSide: const BorderSide(color: Colors.tealAccent),
+                                  ),
+                                  errorBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    borderSide: const BorderSide(color: Colors.redAccent),
+                                  ),
+                                  focusedErrorBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    borderSide: const BorderSide(color: Colors.redAccent),
+                                  ),
+                                ),
+                                validator: (value) {
+                                  if (value == null || value.trim().isEmpty) {
+                                    return "Full name is required";
+                                  }
+                                  if (value.trim().length < 2) {
+                                    return "Enter at least 2 characters";
+                                  }
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: 20),
+
+                              // Email Address Field
                               TextFormField(
                                 controller: _emailController,
                                 keyboardType: TextInputType.emailAddress,
@@ -169,7 +211,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 decoration: InputDecoration(
                                   labelText: "Password",
                                   labelStyle: const TextStyle(color: Colors.white70),
-                                  hintText: "Enter password",
+                                  hintText: "Create a password",
                                   hintStyle: const TextStyle(color: Colors.white24),
                                   prefixIcon: const Icon(Icons.lock_outline, color: Colors.tealAccent),
                                   enabledBorder: OutlineInputBorder(
@@ -201,7 +243,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                               const SizedBox(height: 32),
 
-                              // Sign In Button
+                              // Sign Up Button
                               BlocBuilder<AuthBloc, AuthState>(
                                 builder: (context, state) {
                                   final isLoading = state is AuthLoadingState;
@@ -221,9 +263,10 @@ class _LoginScreenState extends State<LoginScreen> {
                                         : () {
                                             if (_formKey.currentState?.validate() == true) {
                                               context.read<AuthBloc>().add(
-                                                    LoginEvent(
-                                                      _emailController.text.trim(),
-                                                      _passwordController.text,
+                                                    RegisterEvent(
+                                                      email: _emailController.text.trim(),
+                                                      name: _nameController.text.trim(),
+                                                      password: _passwordController.text,
                                                     ),
                                                   );
                                             }
@@ -238,7 +281,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                             ),
                                           )
                                         : const Text(
-                                            "Sign In",
+                                            "Sign Up",
                                             style: TextStyle(
                                               fontSize: 16,
                                               fontWeight: FontWeight.bold,
@@ -253,23 +296,20 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 24),
 
-                      // Sign Up Navigator
+                      // Sign In Navigator
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           const Text(
-                            "Don't have an account? ",
+                            "Already have an account? ",
                             style: TextStyle(color: Colors.white70),
                           ),
                           GestureDetector(
                             onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (context) => const RegisterScreen()),
-                              );
+                              Navigator.pop(context);
                             },
                             child: Text(
-                              "Sign Up",
+                              "Sign In",
                               style: TextStyle(
                                 color: Colors.tealAccent.shade400,
                                 fontWeight: FontWeight.bold,
