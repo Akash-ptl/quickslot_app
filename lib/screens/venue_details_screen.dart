@@ -1,24 +1,36 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
-import '../models.dart';
-import '../providers.dart';
-import '../api_service.dart';
+import '../bloc/auth/auth_bloc.dart';
+import '../bloc/booking/booking_bloc.dart';
+import '../bloc/slot/slot_bloc.dart';
+import '../data/models.dart';
 
-class VenueDetailsScreen extends ConsumerStatefulWidget {
+class VenueDetailsScreen extends StatefulWidget {
   final Venue venue;
 
   const VenueDetailsScreen({super.key, required this.venue});
 
   @override
-  ConsumerState<VenueDetailsScreen> createState() => _VenueDetailsScreenState();
+  State<VenueDetailsScreen> createState() => _VenueDetailsScreenState();
 }
 
-class _VenueDetailsScreenState extends ConsumerState<VenueDetailsScreen> {
-  DateTime _selectedDate = DateTime.now().add(const Duration(days: 1)); // Default to tomorrow to avoid past slots
+class _VenueDetailsScreenState extends State<VenueDetailsScreen> {
+  DateTime _selectedDate = DateTime.now().add(const Duration(days: 1)); // Default tomorrow
+  bool _isBookingProgress = false;
 
   String get _dateStr => DateFormat('yyyy-MM-dd').format(_selectedDate);
   String get _displayDateStr => DateFormat('EEEE, MMM dd, yyyy').format(_selectedDate);
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSlots();
+  }
+
+  void _loadSlots() {
+    context.read<SlotBloc>().add(LoadSlotsEvent(venueId: widget.venue.id, date: _dateStr));
+  }
 
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
@@ -45,7 +57,18 @@ class _VenueDetailsScreenState extends ConsumerState<VenueDetailsScreen> {
       setState(() {
         _selectedDate = picked;
       });
+      _loadSlots();
     }
+  }
+
+  void _showLoadingSpinner() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(color: Colors.tealAccent),
+      ),
+    );
   }
 
   // Double Booking Concurrency Handler Dialog
@@ -93,10 +116,7 @@ class _VenueDetailsScreenState extends ConsumerState<VenueDetailsScreen> {
   }
 
   // Handle Slot Tapped & Trigger Booking
-  Future<void> _handleBooking(BuildContext context, WidgetRef ref, Slot slot) async {
-    final currentUser = ref.read(currentUserProvider);
-    if (currentUser == null) return;
-
+  Future<void> _handleBooking(BuildContext context, Slot slot, int userId) async {
     // Show booking confirmation dialog
     final bool? confirm = await showDialog<bool>(
       context: context,
@@ -128,274 +148,283 @@ class _VenueDetailsScreenState extends ConsumerState<VenueDetailsScreen> {
 
     if (confirm != true) return;
 
-    // Show loading spinner
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(
-        child: CircularProgressIndicator(color: Colors.tealAccent),
-      ),
-    );
-
-    final apiService = ref.read(apiServiceProvider);
-    final params = SlotParams(venueId: widget.venue.id, date: _dateStr);
-
-    try {
-      // Call createBooking
-      await apiService.createBooking(widget.venue.id, _dateStr, slot.slotTime, currentUser.id);
-
-      // Pop loading spinner
-      if (context.mounted) Navigator.of(context).pop();
-
-      // Show success
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: Colors.teal.shade700,
-            content: Text(
-              "Successfully booked ${widget.venue.name} at ${slot.slotTime}!",
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-            ),
-          ),
-        );
-      }
-
-      // Refresh slots grid
-      ref.invalidate(slotsProvider(params));
-      // Refresh user bookings list
-      ref.invalidate(userBookingsProvider(currentUser.id));
-
-    } on SlotAlreadyBookedException catch (_) {
-      // Pop loading spinner
-      if (context.mounted) Navigator.of(context).pop();
-
-      // Show collision warning dialog
-      if (context.mounted) {
-        _showConflictDialog(context, slot.slotTime);
-      }
-
-      // Refresh slots grid
-      ref.invalidate(slotsProvider(params));
-
-    } catch (e) {
-      // Pop loading spinner
-      if (context.mounted) Navigator.of(context).pop();
-
-      // Show error
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            backgroundColor: Colors.redAccent.shade700,
-            content: Text("Booking failed: ${e.toString()}"),
-          ),
-        );
-      }
+    if (context.mounted) {
+      context.read<SlotBloc>().add(BookSlotEvent(
+            venueId: widget.venue.id,
+            date: _dateStr,
+            slotTime: slot.slotTime,
+            userId: userId,
+          ));
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final params = SlotParams(venueId: widget.venue.id, date: _dateStr);
-    final slotsAsync = ref.watch(slotsProvider(params));
-    final currentUser = ref.watch(currentUserProvider);
+    return BlocBuilder<AuthBloc, AuthState>(
+      builder: (context, authState) {
+        if (authState is! AuthenticatedState) return const SizedBox();
+        final currentUser = authState.user;
 
-    return Scaffold(
-      backgroundColor: const Color(0xFF0F1E24),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF142930),
-        title: Text(widget.venue.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-      ),
-      body: Column(
-        children: [
-          // Header info & Date Picker Selector
-          Container(
-            padding: const EdgeInsets.all(20),
-            color: const Color(0xFF142930),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Icon(Icons.location_on_rounded, color: Colors.tealAccent, size: 18),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        widget.venue.location,
-                        style: const TextStyle(color: Colors.white70, fontSize: 15),
+        return Scaffold(
+          backgroundColor: const Color(0xFF0F1E24),
+          appBar: AppBar(
+            backgroundColor: const Color(0xFF142930),
+            title: Text(widget.venue.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+          ),
+          body: BlocListener<SlotBloc, SlotState>(
+            listener: (context, slotState) {
+              if (slotState is SlotLoadedState) {
+                // Handle Loader Overlay
+                if (slotState.bookingStatus == 'progress' && !_isBookingProgress) {
+                  _isBookingProgress = true;
+                  _showLoadingSpinner();
+                } else if (slotState.bookingStatus != 'progress' && _isBookingProgress) {
+                  _isBookingProgress = false;
+                  Navigator.of(context).pop(); // Dismiss spinner
+                }
+
+                // Handle Success
+                if (slotState.bookingStatus == 'success') {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      backgroundColor: Colors.teal.shade700,
+                      content: Text(
+                        slotState.bookingMessage ?? "Successfully booked!",
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                
-                // Date picker trigger button
-                InkWell(
-                  onTap: () => _selectDate(context),
-                  borderRadius: BorderRadius.circular(15),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.05),
-                      borderRadius: BorderRadius.circular(15),
-                      border: Border.all(color: Colors.white.withOpacity(0.1)),
+                  );
+                  // Refresh user bookings list
+                  context.read<BookingBloc>().add(LoadUserBookingsEvent(currentUser.id));
+                  // Reset status to idle
+                  context.read<SlotBloc>().add(ResetBookingStatusEvent());
+                }
+
+                // Handle Collision Conflict
+                if (slotState.bookingStatus == 'conflict') {
+                  _showConflictDialog(context, slotState.conflictedSlotTime ?? '');
+                  // Reset status to idle
+                  context.read<SlotBloc>().add(ResetBookingStatusEvent());
+                }
+
+                // Handle Error
+                if (slotState.bookingStatus == 'error') {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      backgroundColor: Colors.redAccent.shade700,
+                      content: Text(slotState.bookingMessage ?? "Booking failed"),
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.calendar_month_rounded, color: Colors.tealAccent, size: 22),
-                            const SizedBox(width: 12),
-                            Text(
-                              _displayDateStr,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
+                  );
+                  // Reset status to idle
+                  context.read<SlotBloc>().add(ResetBookingStatusEvent());
+                }
+              }
+            },
+            child: Column(
+              children: [
+                // Header info & Date Picker Selector
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  color: const Color(0xFF142930),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.location_on_rounded, color: Colors.tealAccent, size: 18),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              widget.venue.location,
+                              style: const TextStyle(color: Colors.white70, fontSize: 15),
                             ),
-                          ],
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Date picker trigger button
+                      InkWell(
+                        onTap: () => _selectDate(context),
+                        borderRadius: BorderRadius.circular(15),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.05),
+                            borderRadius: BorderRadius.circular(15),
+                            border: Border.all(color: Colors.white.withOpacity(0.1)),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: [
+                                  const Icon(Icons.calendar_month_rounded, color: Colors.tealAccent, size: 22),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    _displayDateStr,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const Icon(Icons.arrow_drop_down_rounded, color: Colors.tealAccent, size: 28),
+                            ],
+                          ),
                         ),
-                        const Icon(Icons.arrow_drop_down_rounded, color: Colors.tealAccent, size: 28),
-                      ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Slots Grid View
+                Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: () async {
+                      _loadSlots();
+                    },
+                    color: Colors.tealAccent,
+                    child: BlocBuilder<SlotBloc, SlotState>(
+                      builder: (context, state) {
+                        if (state is SlotLoadingState || state is SlotInitialState) {
+                          return const Center(child: CircularProgressIndicator(color: Colors.tealAccent));
+                        }
+
+                        if (state is SlotErrorState) {
+                          return Center(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(Icons.error_outline_rounded, size: 48, color: Colors.redAccent),
+                                const SizedBox(height: 12),
+                                const Text(
+                                  "Failed to load slots for this date",
+                                  style: TextStyle(color: Colors.white70, fontSize: 16),
+                                ),
+                                const SizedBox(height: 16),
+                                ElevatedButton(
+                                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF142930)),
+                                  onPressed: _loadSlots,
+                                  child: const Text("Retry", style: TextStyle(color: Colors.tealAccent)),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+
+                        if (state is SlotLoadedState) {
+                          final slots = state.slots;
+                          return GridView.builder(
+                            padding: const EdgeInsets.all(16),
+                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              childAspectRatio: 2.2,
+                              crossAxisSpacing: 12,
+                              mainAxisSpacing: 12,
+                            ),
+                            itemCount: slots.length,
+                            itemBuilder: (context, index) {
+                              final slot = slots[index];
+                              final bool isBooked = slot.isBooked;
+                              final bool isBookedByMe = isBooked && slot.bookedByUserId == currentUser.id;
+
+                              Color cardBgColor;
+                              Color borderColors;
+                              Widget slotContent;
+
+                              if (isBookedByMe) {
+                                cardBgColor = Colors.teal.shade900.withOpacity(0.4);
+                                borderColors = Colors.tealAccent;
+                                slotContent = Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      slot.slotTime,
+                                      style: const TextStyle(color: Colors.tealAccent, fontSize: 16, fontWeight: FontWeight.bold),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    const Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(Icons.check_circle_outline_rounded, color: Colors.tealAccent, size: 12),
+                                        SizedBox(width: 4),
+                                        Text(
+                                          "Booked by You",
+                                          style: TextStyle(color: Colors.tealAccent, fontSize: 11, fontWeight: FontWeight.bold),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                );
+                              } else if (isBooked) {
+                                cardBgColor = Colors.grey.shade900.withOpacity(0.6);
+                                borderColors = Colors.white.withOpacity(0.05);
+                                slotContent = Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      slot.slotTime,
+                                      style: const TextStyle(color: Colors.white30, fontSize: 16, decoration: TextDecoration.lineThrough),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      slot.bookedByUserName ?? "Booked",
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(color: Colors.white24, fontSize: 11),
+                                    ),
+                                  ],
+                                );
+                              } else {
+                                // Available slot
+                                cardBgColor = const Color(0xFF142930).withOpacity(0.6);
+                                borderColors = Colors.tealAccent.withOpacity(0.2);
+                                slotContent = Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      slot.slotTime,
+                                      style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      "Available",
+                                      style: TextStyle(color: Colors.tealAccent.shade400, fontSize: 11),
+                                    ),
+                                  ],
+                                );
+                              }
+
+                              return AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                decoration: BoxDecoration(
+                                  color: cardBgColor,
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(color: borderColors, width: 1.5),
+                                ),
+                                child: InkWell(
+                                  onTap: isBooked ? null : () => _handleBooking(context, slot, currentUser.id),
+                                  borderRadius: BorderRadius.circular(16),
+                                  child: Center(child: slotContent),
+                                ),
+                              );
+                            },
+                          );
+                        }
+
+                        return const SizedBox();
+                      },
                     ),
                   ),
                 ),
               ],
             ),
           ),
-          
-          // Slots Grid View
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: () async {
-                ref.invalidate(slotsProvider(params));
-              },
-              color: Colors.tealAccent,
-              child: slotsAsync.when(
-                data: (slots) {
-                  return GridView.builder(
-                    padding: const EdgeInsets.all(16),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      childAspectRatio: 2.2,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                    ),
-                    itemCount: slots.length,
-                    itemBuilder: (context, index) {
-                      final slot = slots[index];
-                      final bool isBooked = slot.isBooked;
-                      final bool isBookedByMe = isBooked && slot.bookedByUserId == currentUser?.id;
-
-                      Color cardBgColor;
-                      Color borderColors;
-                      Widget slotContent;
-
-                      if (isBookedByMe) {
-                        cardBgColor = Colors.teal.shade900.withOpacity(0.4);
-                        borderColors = Colors.tealAccent;
-                        slotContent = Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              slot.slotTime,
-                              style: const TextStyle(color: Colors.tealAccent, fontSize: 16, fontWeight: FontWeight.bold),
-                            ),
-                            const SizedBox(height: 2),
-                            const Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.check_circle_outline_rounded, color: Colors.tealAccent, size: 12),
-                                SizedBox(width: 4),
-                                Text(
-                                  "Booked by You",
-                                  style: TextStyle(color: Colors.tealAccent, fontSize: 11, fontWeight: FontWeight.bold),
-                                ),
-                              ],
-                            ),
-                          ],
-                        );
-                      } else if (isBooked) {
-                        cardBgColor = Colors.grey.shade900.withOpacity(0.6);
-                        borderColors = Colors.white.withOpacity(0.05);
-                        slotContent = Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              slot.slotTime,
-                              style: const TextStyle(color: Colors.white30, fontSize: 16, decoration: TextDecoration.lineThrough),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              slot.bookedByUserName ?? "Booked",
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(color: Colors.white24, fontSize: 11),
-                            ),
-                          ],
-                        );
-                      } else {
-                        // Available slot
-                        cardBgColor = const Color(0xFF142930).withOpacity(0.6);
-                        borderColors = Colors.tealAccent.withOpacity(0.2);
-                        slotContent = Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              slot.slotTime,
-                              style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              "Available",
-                              style: TextStyle(color: Colors.tealAccent.shade400, fontSize: 11),
-                            ),
-                          ],
-                        );
-                      }
-
-                      return AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        decoration: BoxDecoration(
-                          color: cardBgColor,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: borderColors, width: 1.5),
-                        ),
-                        child: InkWell(
-                          onTap: isBooked ? null : () => _handleBooking(context, ref, slot),
-                          borderRadius: BorderRadius.circular(16),
-                          child: Center(child: slotContent),
-                        ),
-                      );
-                    },
-                  );
-                },
-                loading: () => const Center(child: CircularProgressIndicator(color: Colors.tealAccent)),
-                error: (e, s) => Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.error_outline_rounded, size: 48, color: Colors.redAccent),
-                      const SizedBox(height: 12),
-                      const Text(
-                        "Failed to load slots for this date",
-                        style: TextStyle(color: Colors.white70, fontSize: 16),
-                      ),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF142930)),
-                        onPressed: () => ref.invalidate(slotsProvider(params)),
-                        child: const Text("Retry", style: TextStyle(color: Colors.tealAccent)),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
