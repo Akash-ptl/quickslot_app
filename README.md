@@ -8,6 +8,39 @@ A premium-grade Flutter mobile application for booking sports venue slots, style
 * 🤖 [Download Android APK](https://github.com/Akash-ptl/quickslot_app/releases)
 * 🌐 [Production API Swagger Docs](https://quickslot-backend-jdhl.onrender.com/docs)
 
+## 🏆 Completed Requirements Checklist (100% Coverage)
+
+### Core Features
+- [x] **Concurrency Collision Safety**: Enforced via a composite unique database index (`UNIQUE(venue_id, date, slot_time)`). In a double-booking scenario, exactly one write succeeds (`201`) and the other is rejected (`409 Conflict`), triggering a collision alert dialog and automatic grid updates.
+- [x] **Lightweight Secure Auth**: Implemented standard email/password registration (`POST /auth/register`) and login (`POST /auth/login`) with `bcrypt` encryption and OAuth2 JWT Bearer Tokens.
+- [x] **Startup & Session Persistence**: Local token cache integration (`shared_preferences`) allows auto-login on startup via a dedicated splash screen (`InitialScreen`).
+- [x] **Dashboards**: Displays seeded sports grounds in a clean category chips layout with a glassmorphic search bar and sliding entry animations.
+- [x] **Interactive Scheduling**: Scrollable custom date timeline picker capsules alongside an available/booked hourly slot availability grid.
+- [x] **My Bookings Manager**: Custom clipper stadium passes notched layout cards depicting time, date, venue details, check-in QR codes, and booking cancellation buttons.
+
+### API Specifications (FastAPI Backend)
+- [x] `GET /venues` (Browse seeded venues)
+- [x] `GET /venues/{id}/slots` (Check slots availability by date)
+- [x] `POST /bookings` (Concurrency-safe booking creation)
+- [x] `GET /users/{id}/bookings` (User active bookings history)
+- [x] `DELETE /bookings/{id}` (Cancel active bookings)
+
+### Standardized State Management & Polish
+- [x] **BLoC state isolation**: Decouples business logic completely from view layout components.
+- [x] **State Handlers Everywhere**:
+  - *Loading states*: Custom animated gradient shimmer overlays (`ShimmerLoading`) on dashboards and booking grids.
+  - *Empty states*: User-friendly empty graphics for booked out dates or empty schedules.
+  - *Error states*: Custom floating notification banners (`PremiumSnackBar`) with status accent borders and icons.
+- [x] **Haptic feedback triggers**: Tactile triggers on timeline navigation, category chip updates, and slot selection.
+- [x] **Clean release permission**: Main manifest is configured to request `<uses-permission android:name="android.permission.INTERNET"/>` so release builds work seamlessly.
+
+### Completed Hackathon Bonus Features
+- [x] **Bonus 1 (Filter slots by time of day)**: Client-side choice chips sorting slots into Morning, Afternoon, Evening, or All.
+- [x] **Bonus 2 (Slot status updates via polling)**: Background execution timer (`Timer.periodic`) triggering background slot refreshes silently every 4 seconds.
+- [x] **Bonus 3 (Unit and widget testing)**: Unit tests verifying JSON serialization models and widget tests auditing the snackbar alert rendering engine.
+
+---
+
 ## 📸 App Screenshots
 
 <table border="1" cellpadding="5">
