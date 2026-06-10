@@ -48,7 +48,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text("Cancel Booking?", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         content: Text(
-          "Are you sure you want to cancel your booking at ${booking.venue_name} on $formattedDate (${booking.slot_time})?\nThis action cannot be undone.",
+          "Are you sure you want to cancel your booking at ${booking.venueName} on $formattedDate (${booking.slotTime})?\nThis action cannot be undone.",
           style: const TextStyle(color: Colors.white70),
         ),
         actions: [
@@ -234,7 +234,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                         margin: const EdgeInsets.only(bottom: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: Colors.white.withOpacity(0.05)),
+                          side: BorderSide(color: Colors.white.withOpacity(0.05)),
                         ),
                         child: Padding(
                           padding: const EdgeInsets.all(16.0),
@@ -261,7 +261,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      booking.venue_name,
+                                      booking.venueName,
                                       style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 16,
@@ -278,7 +278,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                                     ),
                                     const SizedBox(height: 2),
                                     Text(
-                                      "Time: ${booking.slot_time}",
+                                      "Time: ${booking.slotTime}",
                                       style: TextStyle(
                                         color: Colors.tealAccent.shade400,
                                         fontSize: 13,
