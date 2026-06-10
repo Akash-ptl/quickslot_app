@@ -1,104 +1,48 @@
-# QuickSlot Mobile App
+# QuickSlot App 📲
 
-A premium-grade Flutter mobile application for booking sports venue slots. Designed with a custom hand-crafted Dark theme (Slate/Teal) and managed using the **BLoC (Business Logic Component)** pattern for clean separation of concerns and responsive state synchronization.
-
----
-
-## 📲 Download Release Builds
-* 🤖 **Android APK**: [![Download APK](https://img.shields.io/badge/Download-APK-008080?style=for-the-badge&logo=android&logoColor=white)](https://github.com/Akash-ptl/quickslot_app/releases)
-* 🍎 **iOS Simulator Build**: [![iOS Simulator Build](https://img.shields.io/badge/Download-iOS%20Simulator-grey?style=for-the-badge&logo=apple&logoColor=white)](https://github.com/Akash-ptl/quickslot_app/releases)
+A premium-grade Flutter mobile application for booking sports venue slots, styled with a custom Material 3 Dark theme (Slate/Teal) and managed using the BLoC pattern.
 
 ---
 
-## 📂 Architecture & Folder Layout
-Click on any folder or file path below to view its implementation directly:
-* 📁 **Network & Core Models**: [lib/data/](lib/data/)
-  * 📄 [lib/data/api_service.dart](lib/data/api_service.dart) - API requests, SharedPreferences persistence, automatic IP routing.
-  * 📄 [lib/data/models.dart](lib/data/models.dart) - Data schemas (User, Venue, Slot, Booking).
-* 📁 **State Management Layer**: [lib/bloc/](lib/bloc/)
-  * 📁 [lib/bloc/auth/](lib/bloc/auth/) - Session status tracking.
-  * 📁 [lib/bloc/venue/](lib/bloc/venue/) - Venue listings management.
-  * 📁 [lib/bloc/slot/](lib/bloc/slot/) - Reservation grids and lock state transactions.
-  * 📁 [lib/bloc/booking/](lib/bloc/booking/) - Booking histories and cancellations.
-* 📁 **Interface Views**: [lib/screens/](lib/screens/)
-  * 📄 [lib/screens/initial_screen.dart](lib/screens/initial_screen.dart) - Splash view handling auto-login routes.
-  * 📄 [lib/screens/login_screen.dart](lib/screens/login_screen.dart) - Email login with hidden credentials toggling.
-  * 📄 [lib/screens/register_screen.dart](lib/screens/register_screen.dart) - Account creation page.
-  * 📄 [lib/screens/venue_list_screen.dart](lib/screens/venue_list_screen.dart) - Dashboard feed with shimmer skeleton loadings.
-  * 📄 [lib/screens/venue_details_screen.dart](lib/screens/venue_details_screen.dart) - Venue selection calendar and availability grid.
-  * 📄 [lib/screens/my_bookings_screen.dart](lib/screens/my_bookings_screen.dart) - Ticket pass view displaying booked slots.
-* 📁 **Global Configs & Helpers**:
-  * 📄 [lib/main.dart](lib/main.dart) - App entry configuration and Dark Theme.
-  * 📄 [lib/widgets/premium_snackbar.dart](lib/widgets/premium_snackbar.dart) - Custom floating alert snackbars.
-  * 📄 [lib/widgets/shimmer_loading.dart](lib/widgets/shimmer_loading.dart) - Skeleton loaders design.
+## 🚀 Downloads & Live API
+* 🤖 [Download Android APK](https://github.com/Akash-ptl/quickslot_app/releases)
+* 🍎 [Download iOS Simulator Build](https://github.com/Akash-ptl/quickslot_app/releases)
+* 🌐 [Production API Swagger Docs](https://quickslot-backend-jdhl.onrender.com/docs)
 
 ---
 
-## 🔄 Startup & Auto-Login Flow
-
-```text
-  [App Startup] ──► [InitialScreen] ──► Checks SharedPreferences
-                          │
-         ┌────────────────┴──────────────┐
-         ▼                               ▼
-  [Session Found]                [No Session Found]
-  Sets auth token                Routes to [LoginScreen]
-  Routes to [VenueListScreen]
-```
-
-1. **Auto-Login Check**: On start, `InitialScreen` is loaded showing a premium tennis icon animation while triggering `CheckAuthEvent`.
-2. **Session Persistence**: If user tokens exist in local storage (`shared_preferences`), the `ApiService` is pre-populated and the user is seamlessly routed to `VenueListScreen`.
-3. **Purged Stack Navigation**: During log-out, the app clears all credentials, destroys the navigation history stack (`Navigator.pushAndRemoveUntil`), and returns the user securely to `LoginScreen` to prevent backwards navigation.
+## 🛠️ Setup & Running Locally
+1. Fetch packages:
+   ```bash
+   flutter pub get
+   ```
+2. Start the Flutter app:
+   ```bash
+   flutter run
+   ```
+*Note: The app is configured to connect to uvicorn running on your local computer's Wi-Fi network gateway (`192.168.0.100:8000`) for seamless debugging on physical devices.*
 
 ---
 
-## ✨ Premium UI & UX Overhaul Details
-
-* **Custom Horizontal Calendar Timeline**: Replaces basic dates dropdown. Rendered as animated capsules highlighting the selected day number and text. Tapping a day automatically scrolls it into focus and loads slots instantly.
-* **Shimmer Skeleton Loaders**: Replaces generic progress spinners. Custom gradient layout placeholders match the card designs, offering a responsive native feel.
-* **Stadium Ticket Pass Layout**: Booking cards inside `MyBookingsScreen` are clipped using a custom Clipper path to render stadium ticket notches. Includes perforated divider styling, QR checks, and details layout.
-* **Tactile Haptic Feedback**: Tactile triggers (`HapticFeedback`) on booking taps, category chip selections, and slot grid updates.
-* **Premium Snackbars (`PremiumSnackBar`)**: Fully custom notifications that float cleanly on the screen. Contains left solid indicator borders and status symbols reflecting success, failure, or info.
-* **Glowing Dialog Borders**: Custom confirmation modals designed with rounded corners (`20dp`) and a subtle glowing edge border (`Colors.tealAccent.withOpacity(0.1)`).
-
----
-
-## 🚀 Running the App Locally
-
-### 1. Requirements
-Ensure Flutter SDK is installed and an emulator or physical testing device is configured.
-
-### 2. Configure Packages
-Fetch dependencies:
-```bash
-flutter pub get
-```
-
-### 3. Execution
-Ensure the local API server is running on your network, then start the Flutter app:
-```bash
-flutter run
-```
-*Note: The `ApiService` base URL is configured to connect to your computer's Wi-Fi network host address (e.g. [http://192.168.0.100:8000](http://192.168.0.100:8000)) for seamless debugging on physical mobile devices.*
+## 📐 Architecture Note
+The app is built using a layer-first structure inside the `lib/` directory:
+* `data/`: REST client ([api_service.dart](lib/data/api_service.dart)) and data schemas ([models.dart](lib/data/models.dart)).
+* `bloc/`: BLoC managers for decoupled state management (`auth`, `venue`, `slot`, `booking`).
+* `screens/`: Layout screens ([initial_screen.dart](lib/screens/initial_screen.dart), [login_screen.dart](lib/screens/login_screen.dart), [register_screen.dart](lib/screens/register_screen.dart), [venue_list_screen.dart](lib/screens/venue_list_screen.dart), [venue_details_screen.dart](lib/screens/venue_details_screen.dart), [my_bookings_screen.dart](lib/screens/my_bookings_screen.dart)).
+* `widgets/`: Premium notification alert helper ([premium_snackbar.dart](lib/widgets/premium_snackbar.dart)) and custom shimmer skeleton overlays ([shimmer_loading.dart](lib/widgets/shimmer_loading.dart)).
 
 ---
 
 ## 💡 Hackathon Deliverables & Defense Notes
 
-### 1. Architectural Overview
-The system splits responsibility between a highly responsive, animated Flutter frontend and a secure, concurrent Python backend:
-* **Frontend**: Utilizes BLoC architecture for state management. Business logic is completely decoupled from UI widgets. Data streams are processed asynchronously, utilizing loaders (shimmers) to maintain smooth framerates.
-* **Backend**: Uses FastAPI for non-blocking HTTP parsing, paired with SQLite. Concurrency safety is guaranteed at the database engine transaction layer utilizing unique composite index constraints.
+### 1. Scope Decisions (What We Cut & Why)
+* **Full Third-Party OAuth**: Cut in favor of custom JWT validation to spend our focus checking and tuning concurrent database booking transaction locks.
+* **Live WebSocket Feeds**: Cut to avoid battery/network overhead, opting for clean haptics and client-side empty/error reload triggers instead.
 
-### 2. Scope Decisions — What We Cut & Why
-* **Full Third-Party OAuth2 (Google/Apple Sign-in)**: Cut in favor of custom JWT credentials validation to ensure the 6-hour code window was spent refining core transaction concurrency locks.
-* **Live WebSocket Polling Feed**: Cut to optimize battery/network utilization, routing the effort into high-end UX tactile feedback, layout animations, and offline-first error states.
+### 2. If We Had One More Day...
+* **WebSockets Gateway**: Implement live synchronization to auto-update slot grid cells in real-time when booked on another device.
+* **Offline Caching**: Implement `drift` database storage on the device for ticket passes to support offline inspection of active bookings.
 
-### 3. If We Had One More Day...
-* **WebSockets Synchronisation**: Add a lightweight WebSocket gateway to auto-flip slot statuses from "available" to "booked" on other devices in real-time.
-* **Drift Local Read Cache**: Implement local database storage on the device for "My Bookings" to support offline inspection of stadium ticket passes.
-* **Interactive Arena Seating Map**: Build a custom vector court layout enabling users to visually tap their preferred court rather than selecting from a list.
-
-### 4. AI Usage & Corrections Note
-* **Used AI for**: Initial BLoC structure boilerplates, custom stadium ticket notch path calculations (`TicketClipper`), and shimmer gradient calculations.
-* **What it got wrong**: The AI recommended local loopback routing URLs (`127.0.0.1` and `10.0.2.2`) which resulted in socket connection failures when debugging from physical devices. We identified the network bridge constraints, bound uvicorn to `0.0.0.0`, and dynamically routed client requests to the laptop's local Wi-Fi gateway IP (`192.168.0.100`) to enable correct cross-device communication.
+### 3. AI Usage & Correction Note
+* **Used AI for**: Initial BLoC boilerplates, custom clipper notch curves, and shimmer loading layouts.
+* **AI Correction**: The AI suggested generic loopback routing hosts (`127.0.0.1` and `10.0.2.2`) which blocked physical testing devices from reaching the backend server. We resolved this by binding uvicorn to `0.0.0.0` and mapping the mobile client to the laptop's Wi-Fi network gateway IP (`192.168.0.100`), establishing successful cross-device connection.
