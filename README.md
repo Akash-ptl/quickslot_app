@@ -1,85 +1,83 @@
-# QuickSlot — Sports Booking Application
+# QuickSlot App
 
-QuickSlot is a concurrency-safe, mini-app for booking sports slots (badminton courts/turfs). This repository contains the Flutter mobile client. The corresponding backend code is in the companion `quickslot_backend` directory.
+A mobile Flutter application for booking sports venue slots. Designed with a custom Material 3 Dark theme and managed using the **BLoC (Business Logic Component)** pattern for clean separation of concerns.
 
 ---
 
-## 🏗️ Architecture & Data Flow
+## 📂 Project Architecture & Folder Structure
 
-The project is structured as two independent modules:
-1. **Frontend (Flutter)**: Structured using the **BLoC (Business Logic Component)** state management framework with an organized clean architecture (Layer-first: `data/`, `bloc/`, `screens/`).
-2. **Backend (Python FastAPI)**: Built with FastAPI, Uvicorn, and SQLAlchemy. Persists data to a local **SQLite** database.
+This application is built using a layer-first structure inside the `lib/` directory:
 
 ```text
-┌────────────────┐                ┌─────────────────┐                ┌──────────────┐
-│  Flutter App   │  HTTP Requests │  FastAPI Server │  SQLAlchemy ORM │  SQLite DB   │
-│    (BLoC)      ├───────────────►│  (127.0.0.1)    ├───────────────►│  (WAL Mode)  │
-│                │                │                 │                │  Unique Ctr  │
-└────────────────┘                └─────────────────┘                └──────────────┘
+lib/
+├── data/
+│   ├── api_service.dart      # REST API client with local emulator IP routing
+│   └── models.dart           # Immutable models (User, Venue, Slot, Booking)
+├── bloc/
+│   ├── auth/                 # User login session state
+│   ├── venue/                # Venue dashboard state
+│   ├── slot/                 # Grid slots loading & booking transaction states
+│   └── booking/              # User bookings list & cancellation state
+├── screens/
+│   ├── login_screen.dart     # Select profile to login
+│   ├── venue_list_screen.dart# Main dashboard listing venues
+│   ├── venue_details_screen.dart # Calendar date selector & interactive slot grid
+│   └── my_bookings_screen.dart # List bookings with cancellation buttons
+└── main.dart                 # Initialises Theme and global MultiRepository/MultiBloc providers
 ```
-
-### 🔒 Concurrency Safety (No Double-Booking)
-Concurrency safety is enforced at the database layer using a **Unique Constraint** on the `bookings` table for `(venue_id, date, slot_time)`. 
-* Even if multiple simultaneous requests arrive at the exact same microsecond, SQLite's transactional locks serialise writing operations. 
-* Only **one** insert succeeds. The subsequent inserts violate the unique constraint and fail with an `IntegrityError`.
-* FastAPI catches this error and returns an HTTP `409 Conflict` status code.
-* The Flutter client catches this 409 exception, emits a conflict state from `SlotBloc`, which triggers a graceful "Booking Collision" warning dialog to the user, and reloads the slot grid.
 
 ---
 
-## 🚀 Setup & Execution Instructions
+## 🔄 App User Flow
 
-### 1. Run the Python Backend
-Requirements: Python 3.11+
-
-```bash
-cd /Users/akashptl/StudioProjects/quickslot_backend
-# Activate virtual environment
-source venv/bin/activate
-# Install dependencies
-pip install -r requirements.txt
-# Launch local server (runs on port 8000)
-uvicorn main:app --reload --host 127.0.0.1 --port 8000
+```text
+  [LoginScreen] ────► [VenueListScreen] ────► [VenueDetailsScreen] ◄────► [MyBookingsScreen]
+  (Pick profile)       (Browse venues)        (Pick date & book)          (View & cancel bookings)
 ```
-*The database initializes automatically and seeds 3 venues, 5 mock users, and hourly slots.*
 
-### 2. Run the Flutter App
-Ensure your Flutter environment is ready (Android emulator or iOS simulator running).
+1. **Profile Selection**: On start, users pick one of the five seeded test accounts to set the `AuthBloc` state. This provides the `X-User-Id` header for API request authentication.
+2. **Venue Dashboard**: Displays sports venues with custom styling. Displays loading shimmers and provides pull-to-refresh to fetch updated listings.
+3. **Slot Booking Grid**: Displays hourly slots (6:00 AM to 10:00 PM). Booked slots show details on who holds the booking. Tapping an available slot prompts confirmation.
+4. **Active Bookings Manager**: Accessible via the bookmark icon. Lists all active reservations with option to cancel them.
 
+---
+
+## ⚡ Concurrency Conflict Handling (UX Flow)
+
+Double-booking collisions are handled cleanly using BLoC's state-listener flow:
+
+```text
+  [Slot Grid] ──(Tap Book)──► [SlotBloc] ──(POST /bookings)──► [FastAPI Backend]
+                                                                        │
+  [Grid Refreshed] ◄──(Reset)─── [SlotBloc] ◄──(Conflict State)◄─── [409 Conflict]
+          │
+  [Collision Dialog shown]
+```
+
+1. When a user requests a booking, the app shows a progress overlay.
+2. If another user books the slot milliseconds earlier, the backend returns a `409 Conflict`.
+3. The `SlotBloc` intercepts the 409 exception, fetches the updated slot grid status, and emits a `SlotLoadedState` with `bookingStatus: 'conflict'`.
+4. The screen's `BlocListener` intercepts this conflict state:
+   - Dismisses the progress spinner.
+   - Triggers an alert dialog: *"Booking Collision! Another user booked this slot at the exact same instant."*
+   - Refreshes the grid automatically to reflect the newly updated slot status.
+
+---
+
+## 🚀 Running the App locally
+
+### 1. Requirements
+Ensure you have the Flutter SDK installed and a running emulator/simulator.
+
+### 2. Configure Dependencies
+Fetch packages:
 ```bash
-cd /Users/akashptl/StudioProjects/quickslot_app
-# Get packages
 flutter pub get
-# Run app
+```
+
+### 3. Execution
+Ensure the local backend is running, then start the Flutter app:
+```bash
 flutter run
 ```
-
----
-
-## ⚙️ Concurrency Testing
-
-To verify double-booking prevention, run the automated thread-pool test script:
-```bash
-cd /Users/akashptl/StudioProjects/quickslot_backend
-venv/bin/python test_concurrency.py
-```
-This triggers **5 concurrent requests** at the exact same moment to book the same slot. Output will confirm that exactly **1 request succeeds** (`201 Created`) and the other **4 requests are rejected** with `409 Conflict`.
-
----
-
-## ✂️ What We Cut & Why (Scope Choices)
-* **Full Authentication (OAuth/JWT)**: We cut this to save time and prevent bloated code, using a simplified `X-User-Id` header-based authentication as allowed by the rules.
-* **WebSockets for Live Synchronization**: Instead of complex WebSockets, we rely on immediate UI invalidation (refreshing lists/grids on any booking action) and manual pull-to-refresh to keep the code fast and maintainable.
-
----
-
-## 🔮 With One More Day...
-1. **WebSockets Integration**: Implement live push updates so slot statuses flip in real-time when another user books.
-2. **Offline Mode**: Add a local database cache (using Hive or sqflite) on the Flutter client to load previously viewed bookings offline.
-3. **Unit & Widget Tests**: Increase test coverage for widgets and BLoC logic.
-
----
-
-## 🤖 AI Usage Note
-* **What AI was used for**: Setting up initial boilerplate for SQLAlchemy models and FastAPI endpoints, plus styling the Flutter UI screens.
-* **One thing it got wrong that was caught & fixed**: The AI initially used relative imports (e.g. `from .database import get_db`) in the FastAPI backend. Running Uvicorn directly on the file threw an `ImportError: attempted relative import with no known parent package`. We caught this, converted them to absolute imports (e.g. `from database import get_db`), which resolved the startup crash.
+*Note: The `ApiService` automatically detects if it is running on an Android Emulator and translates the base URL host to `http://10.0.2.2:8000` (instead of `localhost:8000`) so network requests succeed without proxy config.*
