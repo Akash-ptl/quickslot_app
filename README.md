@@ -5,35 +5,32 @@ A premium-grade Flutter mobile application for booking sports venue slots. Desig
 ---
 
 ## 📲 Download Release Builds
-[![Download APK](https://img.shields.io/badge/Download-APK-008080?style=for-the-badge&logo=android&logoColor=white)](https://github.com/akashptl/quickslot_app/releases)
-[![iOS Simulator Build](https://img.shields.io/badge/Download-iOS%20Simulator-grey?style=for-the-badge&logo=apple&logoColor=white)](https://github.com/akashptl/quickslot_app/releases)
+* 🤖 **Android APK**: [![Download APK](https://img.shields.io/badge/Download-APK-008080?style=for-the-badge&logo=android&logoColor=white)](https://github.com/Akash-ptl/quickslot_app/releases)
+* 🍎 **iOS Simulator Build**: [![iOS Simulator Build](https://img.shields.io/badge/Download-iOS%20Simulator-grey?style=for-the-badge&logo=apple&logoColor=white)](https://github.com/Akash-ptl/quickslot_app/releases)
 
 ---
 
 ## 📂 Architecture & Folder Layout
-This application is built using a layer-first structure inside the `lib/` directory:
-```text
-lib/
-├── data/
-│   ├── api_service.dart      # REST Client, session persistence, automatic Wi-Fi IP routing
-│   └── models.dart           # Immutable models (User, Venue, Slot, Booking)
-├── bloc/
-│   ├── auth/                 # User login session state
-│   ├── venue/                # Venue dashboard state
-│   ├── slot/                 # Grid slots loading & booking transaction states
-│   └── booking/              # User bookings list & cancellation state
-├── screens/
-│   ├── initial_screen.dart   # Startup splash page which check for local session auto-login
-│   ├── login_screen.dart     # User login form with email and password (toggleable visibility)
-│   ├── register_screen.dart  # Sign-up page for new accounts
-│   ├── venue_list_screen.dart# Main dashboard listing venues with skeleton shimmers
-│   ├── venue_details_screen.dart # Scrollable custom date timeline picker & interactive slot grid
-│   └── my_bookings_screen.dart # Ticket Notch pass dashboard with cancellation handlers
-├── widgets/
-│   ├── premium_snackbar.dart # Custom floating notification with solid left border strips
-│   └── shimmer_loading.dart  # Custom skeleton loader placeholders
-└── main.dart                 # App initialization and theme definitions
-```
+Click on any folder or file path below to view its implementation directly:
+* 📁 **Network & Core Models**: [lib/data/](lib/data/)
+  * 📄 [lib/data/api_service.dart](lib/data/api_service.dart) - API requests, SharedPreferences persistence, automatic IP routing.
+  * 📄 [lib/data/models.dart](lib/data/models.dart) - Data schemas (User, Venue, Slot, Booking).
+* 📁 **State Management Layer**: [lib/bloc/](lib/bloc/)
+  * 📁 [lib/bloc/auth/](lib/bloc/auth/) - Session status tracking.
+  * 📁 [lib/bloc/venue/](lib/bloc/venue/) - Venue listings management.
+  * 📁 [lib/bloc/slot/](lib/bloc/slot/) - Reservation grids and lock state transactions.
+  * 📁 [lib/bloc/booking/](lib/bloc/booking/) - Booking histories and cancellations.
+* 📁 **Interface Views**: [lib/screens/](lib/screens/)
+  * 📄 [lib/screens/initial_screen.dart](lib/screens/initial_screen.dart) - Splash view handling auto-login routes.
+  * 📄 [lib/screens/login_screen.dart](lib/screens/login_screen.dart) - Email login with hidden credentials toggling.
+  * 📄 [lib/screens/register_screen.dart](lib/screens/register_screen.dart) - Account creation page.
+  * 📄 [lib/screens/venue_list_screen.dart](lib/screens/venue_list_screen.dart) - Dashboard feed with shimmer skeleton loadings.
+  * 📄 [lib/screens/venue_details_screen.dart](lib/screens/venue_details_screen.dart) - Venue selection calendar and availability grid.
+  * 📄 [lib/screens/my_bookings_screen.dart](lib/screens/my_bookings_screen.dart) - Ticket pass view displaying booked slots.
+* 📁 **Global Configs & Helpers**:
+  * 📄 [lib/main.dart](lib/main.dart) - App entry configuration and Dark Theme.
+  * 📄 [lib/widgets/premium_snackbar.dart](lib/widgets/premium_snackbar.dart) - Custom floating alert snackbars.
+  * 📄 [lib/widgets/shimmer_loading.dart](lib/widgets/shimmer_loading.dart) - Skeleton loaders design.
 
 ---
 
@@ -82,4 +79,4 @@ Ensure the local API server is running on your network, then start the Flutter a
 ```bash
 flutter run
 ```
-*Note: The `ApiService` base URL is configured to connect to your computer's Wi-Fi network host address (e.g. `http://192.168.0.100:8000`) for seamless debugging on physical mobile devices.*
+*Note: The `ApiService` base URL is configured to connect to your computer's Wi-Fi network host address (e.g. [http://192.168.0.100:8000](http://192.168.0.100:8000)) for seamless debugging on physical mobile devices.*
