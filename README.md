@@ -7,13 +7,13 @@ QuickSlot is a concurrency-safe, mini-app for booking sports slots (badminton co
 ## 🏗️ Architecture & Data Flow
 
 The project is structured as two independent modules:
-1. **Frontend (Flutter)**: Structured using the **Riverpod** state management framework for clean separation of UI and business logic.
+1. **Frontend (Flutter)**: Structured using the **BLoC (Business Logic Component)** state management framework with an organized clean architecture (Layer-first: `data/`, `bloc/`, `screens/`).
 2. **Backend (Python FastAPI)**: Built with FastAPI, Uvicorn, and SQLAlchemy. Persists data to a local **SQLite** database.
 
 ```text
 ┌────────────────┐                ┌─────────────────┐                ┌──────────────┐
 │  Flutter App   │  HTTP Requests │  FastAPI Server │  SQLAlchemy ORM │  SQLite DB   │
-│   (Riverpod)   ├───────────────►│  (127.0.0.1)    ├───────────────►│  (WAL Mode)  │
+│    (BLoC)      ├───────────────►│  (127.0.0.1)    ├───────────────►│  (WAL Mode)  │
 │                │                │                 │                │  Unique Ctr  │
 └────────────────┘                └─────────────────┘                └──────────────┘
 ```
@@ -23,7 +23,7 @@ Concurrency safety is enforced at the database layer using a **Unique Constraint
 * Even if multiple simultaneous requests arrive at the exact same microsecond, SQLite's transactional locks serialise writing operations. 
 * Only **one** insert succeeds. The subsequent inserts violate the unique constraint and fail with an `IntegrityError`.
 * FastAPI catches this error and returns an HTTP `409 Conflict` status code.
-* The Flutter client catches this 409 exception, displays a graceful "Booking Collision" warning dialog to the user, and reloads the slot grid.
+* The Flutter client catches this 409 exception, emits a conflict state from `SlotBloc`, which triggers a graceful "Booking Collision" warning dialog to the user, and reloads the slot grid.
 
 ---
 
@@ -76,7 +76,7 @@ This triggers **5 concurrent requests** at the exact same moment to book the sam
 ## 🔮 With One More Day...
 1. **WebSockets Integration**: Implement live push updates so slot statuses flip in real-time when another user books.
 2. **Offline Mode**: Add a local database cache (using Hive or sqflite) on the Flutter client to load previously viewed bookings offline.
-3. **Unit & Widget Tests**: Increase test coverage for widgets and Riverpod state notifier logic.
+3. **Unit & Widget Tests**: Increase test coverage for widgets and BLoC logic.
 
 ---
 
