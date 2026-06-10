@@ -29,6 +29,8 @@ class RegisterEvent extends AuthEvent {
 
 class LogoutEvent extends AuthEvent {}
 
+class CheckAuthEvent extends AuthEvent {}
+
 // --- STATES ---
 abstract class AuthState extends Equatable {
   const AuthState();
@@ -59,6 +61,20 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final ApiService apiService;
 
   AuthBloc({required this.apiService}) : super(AuthInitialState()) {
+    on<CheckAuthEvent>((event, emit) async {
+      emit(AuthLoadingState());
+      try {
+        final user = await apiService.tryAutoLogin();
+        if (user != null) {
+          emit(AuthenticatedState(user));
+        } else {
+          emit(AuthInitialState());
+        }
+      } catch (e) {
+        emit(AuthInitialState());
+      }
+    });
+
     on<LoginEvent>((event, emit) async {
       emit(AuthLoadingState());
       try {
@@ -80,8 +96,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       }
     });
 
-    on<LogoutEvent>((event, emit) {
-      apiService.logout();
+    on<LogoutEvent>((event, emit) async {
+      await apiService.logout();
       emit(AuthInitialState());
     });
   }

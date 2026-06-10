@@ -1,17 +1,21 @@
-# QuickSlot App
+# QuickSlot Mobile App
 
-A mobile Flutter application for booking sports venue slots. Designed with a custom Material 3 Dark theme and managed using the **BLoC (Business Logic Component)** pattern for clean separation of concerns.
+A premium-grade Flutter mobile application for booking sports venue slots. Designed with a custom hand-crafted Dark theme (Slate/Teal) and managed using the **BLoC (Business Logic Component)** pattern for clean separation of concerns and responsive state synchronization.
 
 ---
 
-## 📂 Project Architecture & Folder Structure
+## 📲 Download Release Builds
+[![Download APK](https://img.shields.io/badge/Download-APK-008080?style=for-the-badge&logo=android&logoColor=white)](https://github.com/akashptl/quickslot_app/releases)
+[![iOS Simulator Build](https://img.shields.io/badge/Download-iOS%20Simulator-grey?style=for-the-badge&logo=apple&logoColor=white)](https://github.com/akashptl/quickslot_app/releases)
 
+---
+
+## 📂 Architecture & Folder Layout
 This application is built using a layer-first structure inside the `lib/` directory:
-
 ```text
 lib/
 ├── data/
-│   ├── api_service.dart      # REST API client with local emulator IP routing
+│   ├── api_service.dart      # REST Client, session persistence, automatic Wi-Fi IP routing
 │   └── models.dart           # Immutable models (User, Venue, Slot, Booking)
 ├── bloc/
 │   ├── auth/                 # User login session state
@@ -19,65 +23,63 @@ lib/
 │   ├── slot/                 # Grid slots loading & booking transaction states
 │   └── booking/              # User bookings list & cancellation state
 ├── screens/
-│   ├── login_screen.dart     # Select profile to login
-│   ├── venue_list_screen.dart# Main dashboard listing venues
-│   ├── venue_details_screen.dart # Calendar date selector & interactive slot grid
-│   └── my_bookings_screen.dart # List bookings with cancellation buttons
-└── main.dart                 # Initialises Theme and global MultiRepository/MultiBloc providers
+│   ├── initial_screen.dart   # Startup splash page which check for local session auto-login
+│   ├── login_screen.dart     # User login form with email and password (toggleable visibility)
+│   ├── register_screen.dart  # Sign-up page for new accounts
+│   ├── venue_list_screen.dart# Main dashboard listing venues with skeleton shimmers
+│   ├── venue_details_screen.dart # Scrollable custom date timeline picker & interactive slot grid
+│   └── my_bookings_screen.dart # Ticket Notch pass dashboard with cancellation handlers
+├── widgets/
+│   ├── premium_snackbar.dart # Custom floating notification with solid left border strips
+│   └── shimmer_loading.dart  # Custom skeleton loader placeholders
+└── main.dart                 # App initialization and theme definitions
 ```
 
 ---
 
-## 🔄 App User Flow
+## 🔄 Startup & Auto-Login Flow
 
 ```text
-  [LoginScreen] ────► [VenueListScreen] ────► [VenueDetailsScreen] ◄────► [MyBookingsScreen]
-  (Pick profile)       (Browse venues)        (Pick date & book)          (View & cancel bookings)
+  [App Startup] ──► [InitialScreen] ──► Checks SharedPreferences
+                          │
+         ┌────────────────┴──────────────┐
+         ▼                               ▼
+  [Session Found]                [No Session Found]
+  Sets auth token                Routes to [LoginScreen]
+  Routes to [VenueListScreen]
 ```
 
-1. **Profile Selection**: On start, users pick one of the five seeded test accounts to set the `AuthBloc` state. This provides the `X-User-Id` header for API request authentication.
-2. **Venue Dashboard**: Displays sports venues with custom styling. Displays loading shimmers and provides pull-to-refresh to fetch updated listings.
-3. **Slot Booking Grid**: Displays hourly slots (6:00 AM to 10:00 PM). Booked slots show details on who holds the booking. Tapping an available slot prompts confirmation.
-4. **Active Bookings Manager**: Accessible via the bookmark icon. Lists all active reservations with option to cancel them.
+1. **Auto-Login Check**: On start, `InitialScreen` is loaded showing a premium tennis icon animation while triggering `CheckAuthEvent`.
+2. **Session Persistence**: If user tokens exist in local storage (`shared_preferences`), the `ApiService` is pre-populated and the user is seamlessly routed to `VenueListScreen`.
+3. **Purged Stack Navigation**: During log-out, the app clears all credentials, destroys the navigation history stack (`Navigator.pushAndRemoveUntil`), and returns the user securely to `LoginScreen` to prevent backwards navigation.
 
 ---
 
-## ⚡ Concurrency Conflict Handling (UX Flow)
+## ✨ Premium UI & UX Overhaul Details
 
-Double-booking collisions are handled cleanly using BLoC's state-listener flow:
-
-```text
-  [Slot Grid] ──(Tap Book)──► [SlotBloc] ──(POST /bookings)──► [FastAPI Backend]
-                                                                        │
-  [Grid Refreshed] ◄──(Reset)─── [SlotBloc] ◄──(Conflict State)◄─── [409 Conflict]
-          │
-  [Collision Dialog shown]
-```
-
-1. When a user requests a booking, the app shows a progress overlay.
-2. If another user books the slot milliseconds earlier, the backend returns a `409 Conflict`.
-3. The `SlotBloc` intercepts the 409 exception, fetches the updated slot grid status, and emits a `SlotLoadedState` with `bookingStatus: 'conflict'`.
-4. The screen's `BlocListener` intercepts this conflict state:
-   - Dismisses the progress spinner.
-   - Triggers an alert dialog: *"Booking Collision! Another user booked this slot at the exact same instant."*
-   - Refreshes the grid automatically to reflect the newly updated slot status.
+* **Custom Horizontal Calendar Timeline**: Replaces basic dates dropdown. Rendered as animated capsules highlighting the selected day number and text. Tapping a day automatically scrolls it into focus and loads slots instantly.
+* **Shimmer Skeleton Loaders**: Replaces generic progress spinners. Custom gradient layout placeholders match the card designs, offering a responsive native feel.
+* **Stadium Ticket Pass Layout**: Booking cards inside `MyBookingsScreen` are clipped using a custom Clipper path to render stadium ticket notches. Includes perforated divider styling, QR checks, and details layout.
+* **Tactile Haptic Feedback**: Tactile triggers (`HapticFeedback`) on booking taps, category chip selections, and slot grid updates.
+* **Premium Snackbars (`PremiumSnackBar`)**: Fully custom notifications that float cleanly on the screen. Contains left solid indicator borders and status symbols reflecting success, failure, or info.
+* **Glowing Dialog Borders**: Custom confirmation modals designed with rounded corners (`20dp`) and a subtle glowing edge border (`Colors.tealAccent.withOpacity(0.1)`).
 
 ---
 
-## 🚀 Running the App locally
+## 🚀 Running the App Locally
 
 ### 1. Requirements
-Ensure you have the Flutter SDK installed and a running emulator/simulator.
+Ensure Flutter SDK is installed and an emulator or physical testing device is configured.
 
-### 2. Configure Dependencies
-Fetch packages:
+### 2. Configure Packages
+Fetch dependencies:
 ```bash
 flutter pub get
 ```
 
 ### 3. Execution
-Ensure the local backend is running, then start the Flutter app:
+Ensure the local API server is running on your network, then start the Flutter app:
 ```bash
 flutter run
 ```
-*Note: The `ApiService` automatically detects if it is running on an Android Emulator and translates the base URL host to `http://10.0.2.2:8000` (instead of `localhost:8000`) so network requests succeed without proxy config.*
+*Note: The `ApiService` base URL is configured to connect to your computer's Wi-Fi network host address (e.g. `http://192.168.0.100:8000`) for seamless debugging on physical mobile devices.*

@@ -5,7 +5,7 @@ import 'bloc/auth/auth_bloc.dart';
 import 'bloc/venue/venue_bloc.dart';
 import 'bloc/slot/slot_bloc.dart';
 import 'bloc/booking/booking_bloc.dart';
-import 'screens/login_screen.dart';
+import 'screens/initial_screen.dart';
 
 void main() {
   final apiService = ApiService();
@@ -78,7 +78,7 @@ class MyApp extends StatelessWidget {
         ),
         fontFamily: 'Outfit', // Uses default system fonts but fallbacks gracefully
       ),
-      home: const LoginScreen(),
+      home: const InitialScreen(),
     );
   }
 }

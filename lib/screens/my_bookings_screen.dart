@@ -6,6 +6,7 @@ import '../bloc/booking/booking_bloc.dart';
 import '../bloc/slot/slot_bloc.dart';
 import '../data/models.dart';
 import '../widgets/shimmer_loading.dart';
+import '../widgets/premium_snackbar.dart';
 
 class MyBookingsScreen extends StatefulWidget {
   const MyBookingsScreen({super.key});
@@ -66,7 +67,13 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF162D36),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(
+            color: Colors.tealAccent.withOpacity(0.1),
+            width: 1,
+          ),
+        ),
         title: const Text("Cancel Booking?", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         content: Text(
           "Are you sure you want to cancel your booking at ${booking.venueName} on $formattedDate (${booking.slotTime})?\nThis action cannot be undone.",
@@ -140,25 +147,20 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
 
                 // Show success SnackBar
                 if (bookingState.actionStatus == 'success') {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      backgroundColor: Colors.red.shade700,
-                      content: Text(
-                        bookingState.actionMessage ?? "Booking cancelled.",
-                        style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
-                      ),
-                    ),
+                  PremiumSnackBar.show(
+                    context,
+                    message: bookingState.actionMessage ?? "Booking cancelled.",
+                    type: SnackBarType.success,
                   );
                   context.read<BookingBloc>().add(ResetBookingActionStatusEvent());
                 }
 
                 // Show error SnackBar
                 if (bookingState.actionStatus == 'error') {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      backgroundColor: Colors.redAccent.shade700,
-                      content: Text(bookingState.actionMessage ?? "Cancellation failed"),
-                    ),
+                  PremiumSnackBar.show(
+                    context,
+                    message: bookingState.actionMessage ?? "Cancellation failed",
+                    type: SnackBarType.error,
                   );
                   context.read<BookingBloc>().add(ResetBookingActionStatusEvent());
                 }

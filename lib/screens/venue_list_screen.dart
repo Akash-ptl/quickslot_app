@@ -155,9 +155,9 @@ class _VenueListScreenState extends State<VenueListScreen> {
       builder: (context, authState) {
         if (authState is! AuthenticatedState) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            Navigator.pushReplacement(
-              context,
+            Navigator.of(context).pushAndRemoveUntil(
               MaterialPageRoute(builder: (context) => const LoginScreen()),
+              (route) => false,
             );
           });
           return const SizedBox();
@@ -223,8 +223,67 @@ class _VenueListScreenState extends State<VenueListScreen> {
               IconButton(
                 tooltip: "Logout",
                 icon: const Icon(Icons.logout_rounded),
-                onPressed: () {
-                  context.read<AuthBloc>().add(LogoutEvent());
+                onPressed: () async {
+                  final bool? confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      backgroundColor: const Color(0xFF162D36),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                        side: BorderSide(
+                          color: Colors.tealAccent.withOpacity(0.1),
+                          width: 1,
+                        ),
+                      ),
+                      title: const Row(
+                        children: [
+                          Icon(
+                            Icons.logout_rounded,
+                            color: Colors.redAccent,
+                          ),
+                          SizedBox(width: 12),
+                          Text(
+                            "Logout",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      content: const Text(
+                        "Are you sure you want to log out of your session?",
+                        style: TextStyle(color: Colors.white70),
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(false),
+                          child: const Text(
+                            "Cancel",
+                            style: TextStyle(color: Colors.white54),
+                          ),
+                        ),
+                        TextButton(
+                          style: TextButton.styleFrom(
+                            backgroundColor: Colors.redAccent.shade700,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          onPressed: () => Navigator.of(context).pop(true),
+                          child: const Text(
+                            "Logout",
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+
+                  if (confirm == true && context.mounted) {
+                    context.read<AuthBloc>().add(LogoutEvent());
+                  }
                 },
               ),
               const SizedBox(width: 8),

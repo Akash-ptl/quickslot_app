@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'models.dart';
 
 class SlotAlreadyBookedException implements Exception {
@@ -33,6 +34,12 @@ class ApiService {
     return 'https://quickslot-backend-jdhl.onrender.com';
   }
 
+  // Session keys
+  static const String _keyToken = 'auth_token';
+  static const String _keyUserId = 'user_id';
+  static const String _keyUserEmail = 'user_email';
+  static const String _keyUserName = 'user_name';
+
   String? _token;
 
   String? get token => _token;
@@ -59,7 +66,16 @@ class ApiService {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         _token = data['access_token'] as String;
-        return User.fromJson(data['user']);
+        final user = User.fromJson(data['user']);
+
+        // Persist session
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString(_keyToken, _token!);
+        await prefs.setInt(_keyUserId, user.id);
+        await prefs.setString(_keyUserEmail, user.email);
+        await prefs.setString(_keyUserName, user.name);
+
+        return user;
       } else {
         final errorMsg = _parseErrorMessage(response.body);
         throw ApiException(response.statusCode, errorMsg);
@@ -104,8 +120,35 @@ class ApiService {
     }
   }
 
-  void logout() {
+  Future<User?> tryAutoLogin() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString(_keyToken);
+      final userId = prefs.getInt(_keyUserId);
+      final userEmail = prefs.getString(_keyUserEmail);
+      final userName = prefs.getString(_keyUserName);
+
+      if (token != null && userId != null && userEmail != null && userName != null) {
+        _token = token;
+        return User(id: userId, email: userEmail, name: userName);
+      }
+    } catch (e) {
+      print('[ApiService] Error during auto-login check: $e');
+    }
+    return null;
+  }
+
+  Future<void> logout() async {
     _token = null;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_keyToken);
+      await prefs.remove(_keyUserId);
+      await prefs.remove(_keyUserEmail);
+      await prefs.remove(_keyUserName);
+    } catch (e) {
+      print('[ApiService] Error during logout clearing: $e');
+    }
   }
 
   // GET /venues

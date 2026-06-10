@@ -7,6 +7,7 @@ import '../bloc/booking/booking_bloc.dart';
 import '../bloc/slot/slot_bloc.dart';
 import '../data/models.dart';
 import '../widgets/shimmer_loading.dart';
+import '../widgets/premium_snackbar.dart';
 
 class VenueDetailsScreen extends StatefulWidget {
   final Venue venue;
@@ -315,7 +316,13 @@ class _VenueDetailsScreenState extends State<VenueDetailsScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFF162D36),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(
+            color: Colors.tealAccent.withOpacity(0.1),
+            width: 1,
+          ),
+        ),
         title: const Text("Confirm Booking", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         content: Text(
           "Do you want to book the ${slot.slotTime} slot at ${widget.venue.name} for $_displayDateStr?",
@@ -378,14 +385,10 @@ class _VenueDetailsScreenState extends State<VenueDetailsScreen> {
 
                 // Handle Success
                 if (slotState.bookingStatus == 'success') {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      backgroundColor: Colors.teal.shade700,
-                      content: Text(
-                        slotState.bookingMessage ?? "Successfully booked!",
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                      ),
-                    ),
+                  PremiumSnackBar.show(
+                    context,
+                    message: slotState.bookingMessage ?? "Successfully booked!",
+                    type: SnackBarType.success,
                   );
                   // Refresh user bookings list
                   context.read<BookingBloc>().add(LoadUserBookingsEvent(currentUser.id));
@@ -402,11 +405,10 @@ class _VenueDetailsScreenState extends State<VenueDetailsScreen> {
 
                 // Handle Error
                 if (slotState.bookingStatus == 'error') {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      backgroundColor: Colors.redAccent.shade700,
-                      content: Text(slotState.bookingMessage ?? "Booking failed"),
-                    ),
+                  PremiumSnackBar.show(
+                    context,
+                    message: slotState.bookingMessage ?? "Booking failed",
+                    type: SnackBarType.error,
                   );
                   // Reset status to idle
                   context.read<SlotBloc>().add(ResetBookingStatusEvent());
