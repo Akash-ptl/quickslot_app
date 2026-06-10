@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../bloc/auth/auth_bloc.dart';
 import '../bloc/venue/venue_bloc.dart';
+import '../data/models.dart';
 import '../widgets/shimmer_loading.dart';
 import 'login_screen.dart';
 import 'my_bookings_screen.dart';
