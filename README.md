@@ -101,18 +101,4 @@ Double-booking collisions are handled cleanly using BLoC's state-listener flow:
    ```
 *Note: The app is configured to connect to uvicorn running on your local computer's Wi-Fi network gateway (`192.168.0.100:8000`) for seamless debugging on physical devices.*
 
----
 
-## 💡 Hackathon Deliverables & Defense Notes
-
-### 1. Scope Decisions (What We Cut & Why)
-* **Full Third-Party OAuth**: Cut in favor of custom JWT validation to spend our focus checking and tuning concurrent database booking transaction locks.
-* **Live WebSocket Feeds**: Cut to avoid battery/network overhead, opting for clean haptics and client-side empty/error reload triggers instead.
-
-### 2. If We Had One More Day...
-* **WebSockets Gateway**: Implement live synchronization to auto-update slot grid cells in real-time when booked on another device.
-* **Offline Caching**: Implement local SQLite read caching for ticket passes to support offline inspection of active bookings.
-
-### 3. AI Usage & Correction Note
-* **Used AI for**: Initial BLoC boilerplates, custom clipper notch curves, and shimmer loading layouts.
-* **AI Correction**: The AI suggested generic loopback routing hosts (`127.0.0.1` and `10.0.2.2`) which blocked physical testing devices from reaching the backend server. We resolved this by binding uvicorn to `0.0.0.0` and mapping the mobile client to the laptop's Wi-Fi network gateway IP (`192.168.0.100`), establishing successful cross-device connection.
