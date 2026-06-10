@@ -20,8 +20,16 @@ class ApiException implements Exception {
 }
 
 class ApiService {
-  // Production Render API URL
-  static const String baseUrl = 'https://quickslot-backend-jdhl.onrender.com';
+  // Dynamic Base URL selection (local debug vs production live)
+  static String get baseUrl {
+    if (kDebugMode) {
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        return 'http://10.0.2.2:8000';
+      }
+      return 'http://127.0.0.1:8000';
+    }
+    return 'https://quickslot-backend-jdhl.onrender.com';
+  }
 
   String? _token;
 
