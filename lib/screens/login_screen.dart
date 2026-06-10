@@ -15,6 +15,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  bool _obscurePassword = true;
 
   final _emailRegex = RegExp(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$");
 
@@ -164,7 +165,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               // Password Field
                               TextFormField(
                                 controller: _passwordController,
-                                obscureText: true,
+                                obscureText: _obscurePassword,
                                 style: const TextStyle(color: Colors.white),
                                 decoration: InputDecoration(
                                   labelText: "Password",
@@ -172,6 +173,17 @@ class _LoginScreenState extends State<LoginScreen> {
                                   hintText: "Enter password",
                                   hintStyle: const TextStyle(color: Colors.white24),
                                   prefixIcon: const Icon(Icons.lock_outline, color: Colors.tealAccent),
+                                  suffixIcon: IconButton(
+                                    icon: Icon(
+                                      _obscurePassword ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                                      color: Colors.white54,
+                                    ),
+                                    onPressed: () {
+                                      setState(() {
+                                        _obscurePassword = !_obscurePassword;
+                                      });
+                                    },
+                                  ),
                                   enabledBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(16),
                                     borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
