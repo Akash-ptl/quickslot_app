@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'dart:async';
 import '../bloc/auth/auth_bloc.dart';
 import '../bloc/booking/booking_bloc.dart';
 import '../bloc/slot/slot_bloc.dart';
@@ -23,6 +24,7 @@ class _VenueDetailsScreenState extends State<VenueDetailsScreen> {
   bool _isBookingProgress = false;
   String _timeFilter = 'All'; // 'All', 'Morning', 'Afternoon', 'Evening'
   final ScrollController _timelineScrollController = ScrollController();
+  Timer? _pollingTimer;
 
   String get _dateStr => DateFormat('yyyy-MM-dd').format(_selectedDate);
   String get _displayDateStr => DateFormat('EEEE, MMM dd, yyyy').format(_selectedDate);
@@ -31,16 +33,34 @@ class _VenueDetailsScreenState extends State<VenueDetailsScreen> {
   void initState() {
     super.initState();
     _loadSlots();
+    _startPolling();
   }
 
   @override
   void dispose() {
+    _pollingTimer?.cancel();
     _timelineScrollController.dispose();
     super.dispose();
   }
 
   void _loadSlots() {
     context.read<SlotBloc>().add(LoadSlotsEvent(venueId: widget.venue.id, date: _dateStr));
+  }
+
+  void _startPolling() {
+    _pollingTimer?.cancel();
+    _pollingTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
+      if (mounted) {
+        final slotState = context.read<SlotBloc>().state;
+        bool isIdle = true;
+        if (slotState is SlotLoadedState && slotState.bookingStatus == 'progress') {
+          isIdle = false;
+        }
+        if (isIdle) {
+          context.read<SlotBloc>().add(PollSlotsEvent(venueId: widget.venue.id, date: _dateStr));
+        }
+      }
+    });
   }
 
   Future<void> _selectDate(BuildContext context) async {

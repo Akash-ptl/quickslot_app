@@ -19,6 +19,15 @@ class LoadSlotsEvent extends SlotEvent {
   List<Object?> get props => [venueId, date];
 }
 
+class PollSlotsEvent extends SlotEvent {
+  final int venueId;
+  final String date;
+  const PollSlotsEvent({required this.venueId, required this.date});
+
+  @override
+  List<Object?> get props => [venueId, date];
+}
+
 class BookSlotEvent extends SlotEvent {
   final int venueId;
   final String date;
@@ -109,6 +118,20 @@ class SlotBloc extends Bloc<SlotEvent, SlotState> {
         emit(SlotLoadedState(slots: slots, venueId: event.venueId, date: event.date));
       } catch (e) {
         emit(SlotErrorState(e.toString()));
+      }
+    });
+
+    on<PollSlotsEvent>((event, emit) async {
+      try {
+        final slots = await apiService.getSlots(event.venueId, event.date);
+        final currentState = state;
+        if (currentState is SlotLoadedState) {
+          emit(currentState.copyWith(slots: slots));
+        } else {
+          emit(SlotLoadedState(slots: slots, venueId: event.venueId, date: event.date));
+        }
+      } catch (e) {
+        print('[SlotBloc] Quiet polling error: $e');
       }
     });
 
