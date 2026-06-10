@@ -461,17 +461,23 @@ class _VenueListScreenState extends State<VenueListScreen> {
                                                 ],
                                               ),
                                               const SizedBox(height: 8),
-                                              Row(
+                                              Wrap(
+                                                crossAxisAlignment: WrapCrossAlignment.center,
+                                                spacing: 8,
+                                                runSpacing: 4,
                                                 children: [
-                                                  Icon(Icons.star_rounded, color: Colors.amber.shade400, size: 16),
-                                                  const SizedBox(width: 4),
-                                                  Text(
-                                                    "$rating Rating",
-                                                    style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold),
+                                                  Row(
+                                                    mainAxisSize: MainAxisSize.min,
+                                                    children: [
+                                                      Icon(Icons.star_rounded, color: Colors.amber.shade400, size: 16),
+                                                      const SizedBox(width: 4),
+                                                      Text(
+                                                        "$rating Rating",
+                                                        style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold),
+                                                      ),
+                                                    ],
                                                   ),
-                                                  const SizedBox(width: 12),
                                                   ...amenities.map((amenity) => Container(
-                                                    margin: const EdgeInsets.only(right: 6),
                                                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                                     decoration: BoxDecoration(
                                                       color: Colors.tealAccent.withOpacity(0.08),
@@ -481,7 +487,7 @@ class _VenueListScreenState extends State<VenueListScreen> {
                                                       amenity,
                                                       style: const TextStyle(color: Colors.tealAccent, fontSize: 10, fontWeight: FontWeight.w500),
                                                     ),
-                                                  )).toList(),
+                                                  )),
                                                 ],
                                               ),
                                             ],
