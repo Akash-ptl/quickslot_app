@@ -5,6 +5,7 @@ import '../bloc/auth/auth_bloc.dart';
 import '../bloc/booking/booking_bloc.dart';
 import '../bloc/slot/slot_bloc.dart';
 import '../data/models.dart';
+import '../widgets/shimmer_loading.dart';
 
 class MyBookingsScreen extends StatefulWidget {
   const MyBookingsScreen({super.key});
@@ -31,6 +32,26 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
       barrierDismissible: false,
       builder: (context) => const Center(
         child: CircularProgressIndicator(color: Colors.tealAccent),
+      ),
+    );
+  }
+
+  Widget _buildShimmerBookings() {
+    return ShimmerLoading(
+      isLoading: true,
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: 3,
+        itemBuilder: (context, index) {
+          return ClipPath(
+            clipper: TicketClipper(),
+            child: Container(
+              margin: const EdgeInsets.only(bottom: 16),
+              height: 160,
+              color: const Color(0xFF162D36),
+            ),
+          );
+        },
       ),
     );
   }
@@ -146,7 +167,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
             child: BlocBuilder<BookingBloc, BookingState>(
               builder: (context, state) {
                 if (state is BookingLoadingState || state is BookingInitialState) {
-                  return const Center(child: CircularProgressIndicator(color: Colors.tealAccent));
+                  return _buildShimmerBookings();
                 }
 
                 if (state is BookingErrorState) {
@@ -227,79 +248,159 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
 
                       // Parse and format date
                       final DateTime parsedDate = DateTime.parse(booking.date);
-                      final String dateDisplay = DateFormat('EEEE, MMM dd, yyyy').format(parsedDate);
 
-                      return Card(
-                        color: const Color(0xFF162D36),
-                        margin: const EdgeInsets.only(bottom: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          side: BorderSide(color: Colors.white.withOpacity(0.05)),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Row(
-                            children: [
-                              // Active Booking Accent Icon
-                              Container(
-                                padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(
-                                  color: Colors.tealAccent.shade400.withOpacity(0.08),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Icon(
-                                  Icons.check_circle_rounded,
-                                  color: Colors.tealAccent.shade400,
-                                  size: 24,
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-
-                              // Booking details
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      booking.venueName,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      dateDisplay,
-                                      style: const TextStyle(
-                                        color: Colors.white70,
-                                        fontSize: 13,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      "Time: ${booking.slotTime}",
-                                      style: TextStyle(
-                                        color: Colors.tealAccent.shade400,
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-
-                              // Cancel Button
-                              IconButton(
-                                tooltip: "Cancel Booking",
-                                icon: const Icon(Icons.cancel_outlined, color: Colors.redAccent),
-                                onPressed: () => _handleCancel(
-                                  context,
-                                  booking,
-                                  currentUser.id,
-                                ),
+                      return AnimatedListItem(
+                        index: index,
+                        child: Container(
+                          margin: const EdgeInsets.only(bottom: 16),
+                          decoration: BoxDecoration(
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.3),
+                                blurRadius: 10,
+                                offset: const Offset(0, 5),
                               ),
                             ],
+                          ),
+                          child: ClipPath(
+                            clipper: TicketClipper(),
+                            child: Container(
+                              color: const Color(0xFF162D36),
+                              child: Column(
+                                children: [
+                                  // Top section of the ticket
+                                  Padding(
+                                    padding: const EdgeInsets.all(16.0),
+                                    child: Row(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        // Left: Sports Category Icon
+                                        Container(
+                                          padding: const EdgeInsets.all(10),
+                                          decoration: BoxDecoration(
+                                            color: Colors.tealAccent.withOpacity(0.08),
+                                            borderRadius: BorderRadius.circular(12),
+                                            border: Border.all(color: Colors.tealAccent.withOpacity(0.2)),
+                                          ),
+                                          child: const Icon(
+                                            Icons.confirmation_num_outlined,
+                                            color: Colors.tealAccent,
+                                            size: 28,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 16),
+                                        // Middle: Booking Details
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                booking.venueName,
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 4),
+                                              const Row(
+                                                children: [
+                                                  Icon(Icons.location_on_rounded, size: 12, color: Colors.white38),
+                                                  SizedBox(width: 4),
+                                                  Text("Main Court", style: TextStyle(color: Colors.white38, fontSize: 11)),
+                                                ],
+                                              ),
+                                              const SizedBox(height: 12),
+                                              Row(
+                                                children: [
+                                                  Expanded(
+                                                    child: Column(
+                                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                                      children: [
+                                                        const Text("DATE", style: TextStyle(color: Colors.white38, fontSize: 9, fontWeight: FontWeight.bold)),
+                                                        const SizedBox(height: 2),
+                                                        Text(
+                                                          DateFormat('MMM dd, yyyy').format(parsedDate),
+                                                          style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                  Expanded(
+                                                    child: Column(
+                                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                                      children: [
+                                                        const Text("TIME", style: TextStyle(color: Colors.white38, fontSize: 9, fontWeight: FontWeight.bold)),
+                                                        const SizedBox(height: 2),
+                                                        Text(
+                                                          booking.slotTime,
+                                                          style: const TextStyle(color: Colors.tealAccent, fontSize: 12, fontWeight: FontWeight.bold),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  
+                                  // Dashed Line Divider
+                                  const Padding(
+                                    padding: EdgeInsets.symmetric(horizontal: 16.0),
+                                    child: DashedDivider(height: 1, color: Colors.white12),
+                                  ),
+                                  
+                                  // Bottom section of the ticket
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Icon(Icons.qr_code_2_rounded, color: Colors.tealAccent.shade400, size: 24),
+                                            const SizedBox(width: 8),
+                                            Text(
+                                              "PASS #${booking.id} - Tap to scan",
+                                              style: TextStyle(
+                                                color: Colors.white.withOpacity(0.5),
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        // Cancel Button
+                                        TextButton.icon(
+                                          style: TextButton.styleFrom(
+                                            foregroundColor: Colors.redAccent,
+                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                            minimumSize: Size.zero,
+                                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                          ),
+                                          onPressed: () => _handleCancel(
+                                            context,
+                                            booking,
+                                            currentUser.id,
+                                          ),
+                                          icon: const Icon(Icons.cancel_outlined, size: 16),
+                                          label: const Text(
+                                            "Cancel",
+                                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
                         ),
                       );
@@ -313,6 +414,115 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
           ),
         );
       },
+    );
+  }
+}
+
+class TicketClipper extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) {
+    final Path path = Path();
+    final double punchRadius = 10.0;
+    final double punchPosition = size.height * 0.62;
+
+    // Start at top-left
+    path.moveTo(0.0, 0.0);
+    
+    // Draw top line to top-right
+    path.lineTo(size.width, 0.0);
+    
+    // Draw right side down to right punch
+    path.lineTo(size.width, punchPosition - punchRadius);
+    // Draw right punch circle cutout (arc)
+    path.arcToPoint(
+      Offset(size.width, punchPosition + punchRadius),
+      radius: Radius.circular(punchRadius),
+      clockwise: false,
+    );
+    // Draw down to bottom-right
+    path.lineTo(size.width, size.height);
+    
+    // Draw bottom line to bottom-left
+    path.lineTo(0.0, size.height);
+    
+    // Draw left side up to left punch
+    path.lineTo(0.0, punchPosition + punchRadius);
+    // Draw left punch circle cutout (arc)
+    path.arcToPoint(
+      Offset(0.0, punchPosition - punchRadius),
+      radius: Radius.circular(punchRadius),
+      clockwise: false,
+    );
+    
+    // Draw up to top-left
+    path.lineTo(0.0, 0.0);
+    path.close();
+    
+    return path;
+  }
+
+  @override
+  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
+}
+
+class DashedDivider extends StatelessWidget {
+  final double height;
+  final Color color;
+
+  const DashedDivider({super.key, this.height = 1.0, this.color = Colors.white24});
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        final boxWidth = constraints.constrainWidth();
+        const dashWidth = 5.0;
+        final dashHeight = height;
+        final dashCount = (boxWidth / (2 * dashWidth)).floor();
+        return Flex(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          direction: Axis.horizontal,
+          children: List.generate(dashCount, (_) {
+            return SizedBox(
+              width: dashWidth,
+              height: dashHeight,
+              child: DecoratedBox(
+                decoration: BoxDecoration(color: color),
+              ),
+            );
+          }),
+        );
+      },
+    );
+  }
+}
+
+class AnimatedListItem extends StatelessWidget {
+  final int index;
+  final Widget child;
+
+  const AnimatedListItem({
+    super.key,
+    required this.index,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      duration: Duration(milliseconds: 400 + (index * 80)),
+      tween: Tween(begin: 0.0, end: 1.0),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) {
+        return Transform.translate(
+          offset: Offset(0, 30 * (1 - value)),
+          child: Opacity(
+            opacity: value,
+            child: child,
+          ),
+        );
+      },
+      child: child,
     );
   }
 }

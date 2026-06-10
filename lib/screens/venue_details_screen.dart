@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import '../bloc/auth/auth_bloc.dart';
 import '../bloc/booking/booking_bloc.dart';
 import '../bloc/slot/slot_bloc.dart';
 import '../data/models.dart';
+import '../widgets/shimmer_loading.dart';
 
 class VenueDetailsScreen extends StatefulWidget {
   final Venue venue;
@@ -19,6 +21,7 @@ class _VenueDetailsScreenState extends State<VenueDetailsScreen> {
   DateTime _selectedDate = DateTime.now().add(const Duration(days: 1)); // Default tomorrow
   bool _isBookingProgress = false;
   String _timeFilter = 'All'; // 'All', 'Morning', 'Afternoon', 'Evening'
+  final ScrollController _timelineScrollController = ScrollController();
 
   String get _dateStr => DateFormat('yyyy-MM-dd').format(_selectedDate);
   String get _displayDateStr => DateFormat('EEEE, MMM dd, yyyy').format(_selectedDate);
@@ -27,6 +30,12 @@ class _VenueDetailsScreenState extends State<VenueDetailsScreen> {
   void initState() {
     super.initState();
     _loadSlots();
+  }
+
+  @override
+  void dispose() {
+    _timelineScrollController.dispose();
+    super.dispose();
   }
 
   void _loadSlots() {
@@ -55,10 +64,26 @@ class _VenueDetailsScreenState extends State<VenueDetailsScreen> {
       },
     );
     if (picked != null && picked != _selectedDate) {
+      HapticFeedback.selectionClick();
       setState(() {
         _selectedDate = picked;
       });
       _loadSlots();
+      
+      final difference = picked.difference(DateTime.now()).inDays;
+      if (difference >= 0 && difference < 14) {
+        _timelineScrollController.animateTo(
+          difference * 77.0,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOutCubic,
+        );
+      } else if (difference >= 14) {
+        _timelineScrollController.animateTo(
+          14 * 77.0,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOutCubic,
+        );
+      }
     }
   }
 
@@ -149,8 +174,142 @@ class _VenueDetailsScreenState extends State<VenueDetailsScreen> {
     );
   }
 
+  Widget _buildShimmerGrid() {
+    return ShimmerLoading(
+      isLoading: true,
+      child: GridView.builder(
+        padding: const EdgeInsets.all(16),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          childAspectRatio: 2.2,
+          crossAxisSpacing: 12,
+          mainAxisSpacing: 12,
+        ),
+        itemCount: 8,
+        itemBuilder: (context, index) {
+          return Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFF142930).withOpacity(0.4),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.white.withOpacity(0.03)),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  height: 16,
+                  width: 70,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  height: 12,
+                  width: 50,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildDateTimeline() {
+    final today = DateTime.now();
+    final difference = _selectedDate.difference(today).inDays;
+    final bool isCustomDateSelected = difference >= 14;
+    final int itemCount = isCustomDateSelected ? 15 : 14;
+
+    return SizedBox(
+      height: 90,
+      child: ListView.builder(
+        controller: _timelineScrollController,
+        scrollDirection: Axis.horizontal,
+        itemCount: itemCount,
+        itemBuilder: (context, index) {
+          final DateTime date;
+          final bool isSelected;
+          if (index == 14 && isCustomDateSelected) {
+            date = _selectedDate;
+            isSelected = true;
+          } else {
+            date = today.add(Duration(days: index));
+            isSelected = DateFormat('yyyy-MM-dd').format(date) == _dateStr;
+          }
+          final dayName = DateFormat('E').format(date);
+          final dayNumber = DateFormat('dd').format(date);
+          
+          return Padding(
+            padding: const EdgeInsets.only(right: 12.0),
+            child: InkWell(
+              onTap: () {
+                HapticFeedback.selectionClick();
+                setState(() {
+                  _selectedDate = date;
+                });
+                _loadSlots();
+              },
+              borderRadius: BorderRadius.circular(16),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: 65,
+                decoration: BoxDecoration(
+                  color: isSelected ? Colors.tealAccent.shade400 : const Color(0xFF162D36),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isSelected ? Colors.tealAccent.shade400 : Colors.white.withOpacity(0.05),
+                    width: 1.5,
+                  ),
+                  boxShadow: isSelected
+                      ? [
+                          BoxShadow(
+                            color: Colors.tealAccent.withOpacity(0.25),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          )
+                        ]
+                      : [],
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      (index == 14 ? "Custom" : dayName).toUpperCase(),
+                      style: TextStyle(
+                        color: isSelected ? Colors.black87 : Colors.white38,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      dayNumber,
+                      style: TextStyle(
+                        color: isSelected ? Colors.black : Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   // Handle Slot Tapped & Trigger Booking
   Future<void> _handleBooking(BuildContext context, Slot slot, int userId) async {
+    HapticFeedback.mediumImpact();
     // Show booking confirmation dialog
     final bool? confirm = await showDialog<bool>(
       context: context,
@@ -277,39 +436,26 @@ class _VenueDetailsScreenState extends State<VenueDetailsScreen> {
                       ),
                       const SizedBox(height: 16),
 
-                      // Date picker trigger button
-                      InkWell(
-                        onTap: () => _selectDate(context),
-                        borderRadius: BorderRadius.circular(15),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.05),
-                            borderRadius: BorderRadius.circular(15),
-                            border: Border.all(color: Colors.white.withOpacity(0.1)),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            "Select Date",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Row(
-                                children: [
-                                  const Icon(Icons.calendar_month_rounded, color: Colors.tealAccent, size: 22),
-                                  const SizedBox(width: 12),
-                                  Text(
-                                    _displayDateStr,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const Icon(Icons.arrow_drop_down_rounded, color: Colors.tealAccent, size: 28),
-                            ],
+                          IconButton(
+                            icon: const Icon(Icons.calendar_month_rounded, color: Colors.tealAccent),
+                            tooltip: "Select Custom Date",
+                            onPressed: () => _selectDate(context),
                           ),
-                        ),
+                        ],
                       ),
+                      const SizedBox(height: 12),
+                      _buildDateTimeline(),
                       const SizedBox(height: 16),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -334,7 +480,7 @@ class _VenueDetailsScreenState extends State<VenueDetailsScreen> {
                     child: BlocBuilder<SlotBloc, SlotState>(
                       builder: (context, state) {
                         if (state is SlotLoadingState || state is SlotInitialState) {
-                          return const Center(child: CircularProgressIndicator(color: Colors.tealAccent));
+                          return _buildShimmerGrid();
                         }
 
                         if (state is SlotErrorState) {
@@ -465,17 +611,20 @@ class _VenueDetailsScreenState extends State<VenueDetailsScreen> {
                                 );
                               }
 
-                              return AnimatedContainer(
-                                duration: const Duration(milliseconds: 200),
-                                decoration: BoxDecoration(
-                                  color: cardBgColor,
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(color: borderColors, width: 1.5),
-                                ),
-                                child: InkWell(
-                                  onTap: isBooked ? null : () => _handleBooking(context, slot, currentUser.id),
-                                  borderRadius: BorderRadius.circular(16),
-                                  child: Center(child: slotContent),
+                              return AnimatedListItem(
+                                index: index,
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 200),
+                                  decoration: BoxDecoration(
+                                    color: cardBgColor,
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(color: borderColors, width: 1.5),
+                                  ),
+                                  child: InkWell(
+                                    onTap: isBooked ? null : () => _handleBooking(context, slot, currentUser.id),
+                                    borderRadius: BorderRadius.circular(16),
+                                    child: Center(child: slotContent),
+                                  ),
                                 ),
                               );
                             },
@@ -492,6 +641,36 @@ class _VenueDetailsScreenState extends State<VenueDetailsScreen> {
           ),
         );
       },
+    );
+  }
+}
+
+class AnimatedListItem extends StatelessWidget {
+  final int index;
+  final Widget child;
+
+  const AnimatedListItem({
+    super.key,
+    required this.index,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      duration: Duration(milliseconds: 300 + (index * 60)),
+      tween: Tween(begin: 0.0, end: 1.0),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) {
+        return Transform.translate(
+          offset: Offset(0, 20 * (1 - value)),
+          child: Opacity(
+            opacity: value,
+            child: child,
+          ),
+        );
+      },
+      child: child,
     );
   }
 }
