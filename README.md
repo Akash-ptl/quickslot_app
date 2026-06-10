@@ -24,12 +24,18 @@ A premium-grade Flutter mobile application for booking sports venue slots, style
   <tr>
     <td align="center"><b>Venue Details & Slots</b></td>
     <td align="center"><b>Confirm Booking Dialog</b></td>
-    <td align="center"><b>My Bookings (Tickets Layout)</b></td>
+    <td align="center"><b>Logout Dialog</b></td>
   </tr>
   <tr>
     <td><img src="screenshots/venue_details_screen.png" width="100%" alt="Venue Details"/></td>
     <td><img src="screenshots/booking_dialog.png" width="100%" alt="Confirm Dialog"/></td>
-    <td><img src="screenshots/my_bookings_screen.png" width="100%" alt="My Bookings"/></td>
+    <td><img src="screenshots/logout_dialog.png" width="100%" alt="Logout Dialog"/></td>
+  </tr>
+  <tr>
+    <td align="center" colspan="3"><b>My Bookings (Tickets Layout)</b></td>
+  </tr>
+  <tr>
+    <td align="center" colspan="3"><img src="screenshots/my_bookings_screen.png" width="50%" alt="My Bookings"/></td>
   </tr>
 </table>
 
