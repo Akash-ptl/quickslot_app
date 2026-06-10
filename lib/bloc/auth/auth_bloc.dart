@@ -14,9 +14,10 @@ class LoadUsersEvent extends AuthEvent {}
 
 class LoginEvent extends AuthEvent {
   final User user;
-  const LoginEvent(this.user);
+  final String password;
+  const LoginEvent(this.user, this.password);
   @override
-  List<Object?> get props => [user];
+  List<Object?> get props => [user, password];
 }
 
 class LogoutEvent extends AuthEvent {}
@@ -46,6 +47,13 @@ class AuthUsersErrorState extends AuthState {
   List<Object?> get props => [message];
 }
 
+class AuthLoginErrorState extends AuthState {
+  final String message;
+  const AuthLoginErrorState(this.message);
+  @override
+  List<Object?> get props => [message];
+}
+
 class AuthenticatedState extends AuthState {
   final User user;
   const AuthenticatedState(this.user);
@@ -56,24 +64,35 @@ class AuthenticatedState extends AuthState {
 // --- BLOC ---
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final ApiService apiService;
+  List<User> _cachedUsers = [];
 
   AuthBloc({required this.apiService}) : super(AuthInitialState()) {
     on<LoadUsersEvent>((event, emit) async {
       emit(AuthUsersLoadingState());
       try {
         final users = await apiService.getUsers();
+        _cachedUsers = users;
         emit(AuthUsersLoadedState(users));
       } catch (e) {
         emit(AuthUsersErrorState(e.toString()));
       }
     });
 
-    on<LoginEvent>((event, emit) {
-      emit(AuthenticatedState(event.user));
+    on<LoginEvent>((event, emit) async {
+      emit(AuthUsersLoadingState());
+      try {
+        await apiService.login(event.user.id, event.password);
+        emit(AuthenticatedState(event.user));
+      } catch (e) {
+        emit(AuthLoginErrorState(e.toString()));
+        emit(AuthUsersLoadedState(_cachedUsers));
+      }
     });
 
     on<LogoutEvent>((event, emit) {
-      emit(AuthInitialState()); // Revert back to loadable state
+      apiService.logout();
+      emit(AuthUsersLoadedState(_cachedUsers));
     });
   }
 }
+

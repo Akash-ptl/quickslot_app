@@ -18,6 +18,96 @@ class _LoginScreenState extends State<LoginScreen> {
     context.read<AuthBloc>().add(LoadUsersEvent());
   }
 
+  void _showPasswordDialog(BuildContext context, User user) {
+    final TextEditingController passwordController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF162D36),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(color: Colors.tealAccent.withOpacity(0.2)),
+          ),
+          title: const Text(
+            "Enter Password",
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          ),
+          content: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Log in as ${user.name}",
+                  style: const TextStyle(color: Colors.white70, fontSize: 14),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: passwordController,
+                  obscureText: true,
+                  style: const TextStyle(color: Colors.white),
+                  decoration: InputDecoration(
+                    labelText: "Password",
+                    labelStyle: const TextStyle(color: Colors.white54),
+                    hintText: "Enter password (default: password123)",
+                    hintStyle: const TextStyle(color: Colors.white24, fontSize: 12),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.tealAccent),
+                    ),
+                    errorBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.redAccent),
+                    ),
+                    focusedErrorBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(color: Colors.redAccent),
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return "Please enter your password";
+                    }
+                    return null;
+                  },
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text("Cancel", style: TextStyle(color: Colors.white54)),
+            ),
+            TextButton(
+              style: TextButton.styleFrom(
+                backgroundColor: Colors.tealAccent.shade400,
+                foregroundColor: Colors.black,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              onPressed: () {
+                if (formKey.currentState?.validate() == true) {
+                  final password = passwordController.text;
+                  Navigator.of(dialogContext).pop();
+                  context.read<AuthBloc>().add(LoginEvent(user, password));
+                }
+              },
+              child: const Text("Login", style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -30,6 +120,18 @@ class _LoginScreenState extends State<LoginScreen> {
               context,
               MaterialPageRoute(
                 builder: (context) => const VenueListScreen(),
+              ),
+            );
+          } else if (state is AuthLoginErrorState) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                backgroundColor: Colors.redAccent.shade700,
+                content: Text(
+                  state.message.contains("401") 
+                      ? "Incorrect password! Please try again."
+                      : state.message,
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                ),
               ),
             );
           }
@@ -177,7 +279,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     final user = users[index];
                                     return InkWell(
                                       onTap: () {
-                                        context.read<AuthBloc>().add(LoginEvent(user));
+                                        _showPasswordDialog(context, user);
                                       },
                                       borderRadius: BorderRadius.circular(16),
                                       child: Container(

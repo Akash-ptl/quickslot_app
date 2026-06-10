@@ -23,6 +23,34 @@ class ApiService {
   // Production Render API URL
   static const String baseUrl = 'https://quickslot-backend-jdhl.onrender.com';
 
+  String? _token;
+
+  String? get token => _token;
+
+  Future<void> login(int userId, String password) async {
+    final url = Uri.parse('$baseUrl/auth/login');
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'user_id': userId,
+        'password': password,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      _token = data['access_token'] as String;
+    } else {
+      final errorMsg = _parseErrorMessage(response.body);
+      throw ApiException(response.statusCode, errorMsg);
+    }
+  }
+
+  void logout() {
+    _token = null;
+  }
+
   // GET /users
   Future<List<User>> getUsers() async {
     final url = Uri.parse('$baseUrl/users');
@@ -70,7 +98,7 @@ class ApiService {
       url,
       headers: {
         'Content-Type': 'application/json',
-        'X-User-Id': userId.toString(),
+        'Authorization': 'Bearer $_token',
       },
       body: jsonEncode({
         'venue_id': venueId,
@@ -92,7 +120,12 @@ class ApiService {
   // GET /users/{id}/bookings
   Future<List<Booking>> getUserBookings(int userId) async {
     final url = Uri.parse('$baseUrl/users/$userId/bookings');
-    final response = await http.get(url);
+    final response = await http.get(
+      url,
+      headers: {
+        'Authorization': 'Bearer $_token',
+      },
+    );
 
     if (response.statusCode == 200) {
       final List<dynamic> jsonList = jsonDecode(response.body);
@@ -105,7 +138,12 @@ class ApiService {
   // DELETE /bookings/{id}
   Future<void> cancelBooking(int bookingId) async {
     final url = Uri.parse('$baseUrl/bookings/$bookingId');
-    final response = await http.delete(url);
+    final response = await http.delete(
+      url,
+      headers: {
+        'Authorization': 'Bearer $_token',
+      },
+    );
 
     if (response.statusCode != 200) {
       final errorMsg = _parseErrorMessage(response.body);
