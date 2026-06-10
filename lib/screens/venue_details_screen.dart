@@ -18,6 +18,7 @@ class VenueDetailsScreen extends StatefulWidget {
 class _VenueDetailsScreenState extends State<VenueDetailsScreen> {
   DateTime _selectedDate = DateTime.now().add(const Duration(days: 1)); // Default tomorrow
   bool _isBookingProgress = false;
+  String _timeFilter = 'All'; // 'All', 'Morning', 'Afternoon', 'Evening'
 
   String get _dateStr => DateFormat('yyyy-MM-dd').format(_selectedDate);
   String get _displayDateStr => DateFormat('EEEE, MMM dd, yyyy').format(_selectedDate);
@@ -112,6 +113,39 @@ class _VenueDetailsScreenState extends State<VenueDetailsScreen> {
           ],
         );
       },
+    );
+  }
+
+  Widget _buildFilterChip(String filter) {
+    final bool isSelected = _timeFilter == filter;
+    return ChoiceChip(
+      label: Text(
+        filter,
+        style: TextStyle(
+          color: isSelected ? Colors.black : Colors.white70,
+          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          fontSize: 12,
+        ),
+      ),
+      selected: isSelected,
+      onSelected: (bool selected) {
+        if (selected) {
+          setState(() {
+            _timeFilter = filter;
+          });
+        }
+      },
+      selectedColor: Colors.tealAccent.shade400,
+      backgroundColor: Colors.white.withOpacity(0.05),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: isSelected ? Colors.tealAccent.shade400 : Colors.white.withOpacity(0.1),
+          width: 1,
+        ),
+      ),
+      showCheckmark: false,
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
     );
   }
 
@@ -276,6 +310,16 @@ class _VenueDetailsScreenState extends State<VenueDetailsScreen> {
                           ),
                         ),
                       ),
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          _buildFilterChip('All'),
+                          _buildFilterChip('Morning'),
+                          _buildFilterChip('Afternoon'),
+                          _buildFilterChip('Evening'),
+                        ],
+                      ),
                     ],
                   ),
                 ),
@@ -316,7 +360,30 @@ class _VenueDetailsScreenState extends State<VenueDetailsScreen> {
                         }
 
                         if (state is SlotLoadedState) {
-                          final slots = state.slots;
+                          final filteredSlots = state.slots.where((slot) {
+                            if (_timeFilter == 'All') return true;
+                            final parts = slot.slotTime.split(':');
+                            if (parts.isEmpty) return false;
+                            final hour = int.tryParse(parts[0]) ?? 0;
+                            if (_timeFilter == 'Morning') {
+                              return hour >= 6 && hour < 12;
+                            } else if (_timeFilter == 'Afternoon') {
+                              return hour >= 12 && hour < 17;
+                            } else if (_timeFilter == 'Evening') {
+                              return hour >= 17 && hour <= 22;
+                            }
+                            return true;
+                          }).toList();
+
+                          if (filteredSlots.isEmpty) {
+                            return const Center(
+                              child: Text(
+                                "No slots available for this time range.",
+                                style: TextStyle(color: Colors.white54, fontSize: 16),
+                              ),
+                            );
+                          }
+
                           return GridView.builder(
                             padding: const EdgeInsets.all(16),
                             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -325,9 +392,9 @@ class _VenueDetailsScreenState extends State<VenueDetailsScreen> {
                               crossAxisSpacing: 12,
                               mainAxisSpacing: 12,
                             ),
-                            itemCount: slots.length,
+                            itemCount: filteredSlots.length,
                             itemBuilder: (context, index) {
-                              final slot = slots[index];
+                              final slot = filteredSlots[index];
                               final bool isBooked = slot.isBooked;
                               final bool isBookedByMe = isBooked && slot.bookedByUserId == currentUser.id;
 
