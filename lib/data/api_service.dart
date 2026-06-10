@@ -20,18 +20,15 @@ class ApiException implements Exception {
 }
 
 class ApiService {
-  // SET THIS TO TRUE ONLY IF testing with a local uvicorn backend on an emulator.
-  // When false, the app connects to the live production Render backend, which is
-  // required when testing on a physical device.
-  static const bool _useLocalBackend = false;
+  // SET THIS TO TRUE to test with a local uvicorn backend on your physical phone / emulator.
+  // When false, the app connects to the live production Render backend.
+  static const bool _useLocalBackend = true;
 
   // Dynamic Base URL selection
   static String get baseUrl {
     if (_useLocalBackend && kDebugMode) {
-      if (defaultTargetPlatform == TargetPlatform.android) {
-        return 'http://10.0.2.2:8000';
-      }
-      return 'http://127.0.0.1:8000';
+      // Connect to your local computer's Wi-Fi IP address
+      return 'http://192.168.0.100:8000';
     }
     return 'https://quickslot-backend-jdhl.onrender.com';
   }
