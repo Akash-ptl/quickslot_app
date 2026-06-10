@@ -204,21 +204,39 @@ class ApiService {
     }
   }
 
+  static const String _keyMyBookingsCache = 'my_bookings_cache_';
+
   // GET /users/{id}/bookings
   Future<List<Booking>> getUserBookings(int userId) async {
     final url = Uri.parse('$baseUrl/users/$userId/bookings');
-    final response = await http.get(
-      url,
-      headers: {
-        'Authorization': 'Bearer $_token',
-      },
-    );
+    final prefs = await SharedPreferences.getInstance();
+    
+    try {
+      final response = await http.get(
+        url,
+        headers: {
+          'Authorization': 'Bearer $_token',
+        },
+      ).timeout(const Duration(seconds: 5));
 
-    if (response.statusCode == 200) {
-      final List<dynamic> jsonList = jsonDecode(response.body);
-      return jsonList.map((json) => Booking.fromJson(json)).toList();
-    } else {
-      throw ApiException(response.statusCode, "Failed to load user bookings");
+      if (response.statusCode == 200) {
+        // Cache the raw JSON response for offline read support
+        await prefs.setString('$_keyMyBookingsCache$userId', response.body);
+        
+        final List<dynamic> jsonList = jsonDecode(response.body);
+        return jsonList.map((json) => Booking.fromJson(json)).toList();
+      } else {
+        throw ApiException(response.statusCode, "Failed to load user bookings");
+      }
+    } catch (e) {
+      // Offline fallback
+      final cachedData = prefs.getString('$_keyMyBookingsCache$userId');
+      if (cachedData != null) {
+        print('[ApiService] Offline cache hit for user bookings: $userId');
+        final List<dynamic> jsonList = jsonDecode(cachedData);
+        return jsonList.map((json) => Booking.fromJson(json)).toList();
+      }
+      rethrow;
     }
   }
 
